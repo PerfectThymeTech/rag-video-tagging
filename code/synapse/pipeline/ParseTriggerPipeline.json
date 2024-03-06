@@ -4,7 +4,7 @@
 		"description": "Pipeline to parse trigger details.",
 		"activities": [
 			{
-				"name": "Set variable1",
+				"name": "SetTestVariable",
 				"type": "SetVariable",
 				"dependsOn": [],
 				"policy": {
