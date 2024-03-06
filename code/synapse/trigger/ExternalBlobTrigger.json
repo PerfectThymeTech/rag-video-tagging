@@ -6,16 +6,6 @@
 		"pipelines": [
 			{
 				"pipelineReference": {
-					"referenceName": "ParseTriggerPipeline",
-					"type": "PipelineReference"
-				},
-				"parameters": {
-					"triggerFilePath": "@triggerBody().folderPath",
-					"triggerFileName": "@triggerBody().fileName"
-				}
-			},
-			{
-				"pipelineReference": {
 					"referenceName": "MainPipeline",
 					"type": "PipelineReference"
 				},
