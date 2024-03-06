@@ -13,106 +13,32 @@
 						"referenceName": "ExternalToRawPipeline",
 						"type": "PipelineReference"
 					},
-					"waitOnCompletion": true
-				}
-			},
-			{
-				"name": "GetPipelineOutputRawAdlsPath",
-				"description": "Get Pipeline Output \"rawAdlsPath\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "rawAdlsPath",
-					"value": {
-						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAdlsFilePath)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineOutputRawAccountName",
-				"description": "Get Pipeline Output \"rawAccountName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "rawAccountName",
-					"value": {
-						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineOutputRawContainerName",
-				"description": "Get Pipeline Output \"rawContainerName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "rawContainerName",
-					"value": {
-						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineOutputRawDirectoryName",
-				"description": "Get Pipeline Output \"rawDirectoryName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "rawDirectoryName",
-					"value": {
-						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
-						"type": "Expression"
+					"waitOnCompletion": true,
+					"parameters": {
+						"externalContainerName": {
+							"value": "@variables('externalContainerName')",
+							"type": "Expression"
+						},
+						"externalDirectoryName": {
+							"value": "@string('')",
+							"type": "Expression"
+						},
+						"rawContainerName": {
+							"value": "@variables('rawContainerName')",
+							"type": "Expression"
+						},
+						"rawDirectoryName": {
+							"value": "@string('')",
+							"type": "Expression"
+						},
+						"externalAccountName": {
+							"value": "@variables('externalAccountName')",
+							"type": "Expression"
+						},
+						"rawAccountName": {
+							"value": "@variables('rawAccountName')",
+							"type": "Expression"
+						}
 					}
 				}
 			},
@@ -122,25 +48,7 @@
 				"type": "ExecutePipeline",
 				"dependsOn": [
 					{
-						"activity": "GetPipelineOutputRawAccountName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "GetPipelineOutputRawAdlsPath",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "GetPipelineOutputRawContainerName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "GetPipelineOutputRawDirectoryName",
+						"activity": "ExecuteExternalToRawPipeline",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -152,22 +60,61 @@
 						"referenceName": "RawToCuratedPipeline",
 						"type": "PipelineReference"
 					},
-					"waitOnCompletion": true
+					"waitOnCompletion": true,
+					"parameters": {
+						"newsShowDetails": {
+							"value": "@string('')",
+							"type": "Expression"
+						},
+						"rawAccountName": {
+							"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
+							"type": "Expression"
+						},
+						"rawContainerName": {
+							"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
+							"type": "Expression"
+						},
+						"rawDirectoryName": {
+							"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
+							"type": "Expression"
+						}
+					}
 				}
 			}
 		],
 		"variables": {
-			"rawAdlsPath": {
+			"externalAccountName": {
+				"type": "String",
+				"defaultValue": "tstsynapsestg"
+			},
+			"externalContainerName": {
+				"type": "String",
+				"defaultValue": "external"
+			},
+			"externalDirectoryName": {
+				"type": "String"
+			},
+			"externalFileName": {
 				"type": "String"
 			},
 			"rawAccountName": {
-				"type": "String"
+				"type": "String",
+				"defaultValue": "tstsynapsestg"
 			},
 			"rawContainerName": {
-				"type": "String"
+				"type": "String",
+				"defaultValue": "raw"
 			},
 			"rawDirectoryName": {
 				"type": "String"
+			},
+			"curatedAccountName": {
+				"type": "String",
+				"defaultValue": "tstsynapsestg"
+			},
+			"curatedContainerName": {
+				"type": "String",
+				"defaultValue": "curated"
 			}
 		},
 		"annotations": [],
