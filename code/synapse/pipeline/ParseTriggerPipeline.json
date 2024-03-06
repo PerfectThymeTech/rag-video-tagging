@@ -19,7 +19,10 @@
 			}
 		],
 		"parameters": {
-			"triggerBody": {
+			"triggerFilePath": {
+				"type": "string"
+			},
+			"triggerFileName": {
 				"type": "string"
 			}
 		},
