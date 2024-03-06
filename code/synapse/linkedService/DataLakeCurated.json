@@ -1,6 +1,5 @@
 {
-	"name": "AzureDataLakeStorage",
-	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"name": "DataLakeCurated",
 	"properties": {
 		"annotations": [],
 		"type": "AzureBlobFS",

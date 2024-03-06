@@ -80,63 +80,63 @@
 						},
 						"source_linked_service_name": {
 							"value": {
-								"value": "@pipeline().parameters.sourceLinkedServiceName",
+								"value": "@variables('rawLinkedServiceName')",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"source_mount_path": {
 							"value": {
-								"value": "@pipeline().parameters.sourceMountPath",
+								"value": "@variables('rawMountPath')",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"source_account_name": {
 							"value": {
-								"value": "@pipeline().parameters.sourceAccountName",
+								"value": "@pipeline().parameters.rawAccountName",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"source_container_name": {
 							"value": {
-								"value": "@pipeline().parameters.sourceContainerName",
+								"value": "@pipeline().parameters.rawContainerName",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"source_file_path": {
 							"value": {
-								"value": "@pipeline().parameters.sourceFilePath",
+								"value": "@pipeline().parameters.rawDirectoryName",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"sink_linked_service_name": {
 							"value": {
-								"value": "@pipeline().parameters.sinkLinkedServiceName",
+								"value": "@variables('curatedLinkedServiceName')",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"sink_mount_path": {
 							"value": {
-								"value": "@pipeline().parameters.sinkMountPath",
+								"value": "@variables('curatedMountPath')",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"sink_account_name": {
 							"value": {
-								"value": "@pipeline().parameters.sinkAccountName",
+								"value": "@pipeline().parameters.curatedAccountName",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"sink_container_name": {
 							"value": {
-								"value": "@pipeline().parameters.sinkContainerName",
+								"value": "@pipeline().parameters.curatedContainerName",
 								"type": "Expression"
 							},
 							"type": "string"
@@ -159,31 +159,19 @@
 			"newsShowDetails": {
 				"type": "string"
 			},
-			"sourceLinkedServiceName": {
+			"rawAccountName": {
 				"type": "string"
 			},
-			"sourceMountPath": {
+			"rawContainerName": {
 				"type": "string"
 			},
-			"sourceAccountName": {
+			"rawDirectoryName": {
 				"type": "string"
 			},
-			"sourceContainerName": {
+			"curatedAccountName": {
 				"type": "string"
 			},
-			"sourceFilePath": {
-				"type": "string"
-			},
-			"sinkLinkedServiceName": {
-				"type": "string"
-			},
-			"sinkMountPath": {
-				"type": "string"
-			},
-			"sinkAccountName": {
-				"type": "string"
-			},
-			"sinkContainerName": {
+			"curatedContainerName": {
 				"type": "string"
 			}
 		},
@@ -215,6 +203,22 @@
 			"azureOpenAiModelName": {
 				"type": "String",
 				"defaultValue": "gpt-4-32k"
+			},
+			"rawMountPath": {
+				"type": "String",
+				"defaultValue": "raw"
+			},
+			"curatedMountPath": {
+				"type": "String",
+				"defaultValue": "curated"
+			},
+			"rawLinkedServiceName": {
+				"type": "String",
+				"defaultValue": "DataLakeRaw"
+			},
+			"curatedLinkedServiceName": {
+				"type": "String",
+				"defaultValue": "DataLakeCurated"
 			}
 		},
 		"annotations": [],
