@@ -243,25 +243,30 @@
 		],
 		"parameters": {
 			"externalContainerName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "external"
 			},
 			"externalDirectoryName": {
 				"type": "string"
 			},
 			"externalFileName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "movie.mp4"
 			},
 			"rawContainerName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "raw"
 			},
 			"rawDirectoryName": {
 				"type": "string"
 			},
 			"externalAccountName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "tstsynapsestg"
 			},
 			"rawAccountName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "tstsynapsestg"
 			},
 			"expectedRawAdlsFilePath": {
 				"type": "string"
