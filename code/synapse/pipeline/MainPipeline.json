@@ -115,6 +115,45 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "ExecuteRawToCuratedPipeline",
+				"description": "Execute Raw to Curated Pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineOutputRawAccountName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "GetPipelineOutputRawAdlsPath",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "GetPipelineOutputRawContainerName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "GetPipelineOutputRawDirectoryName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "RawToCuratedPipeline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
 			}
 		],
 		"variables": {
