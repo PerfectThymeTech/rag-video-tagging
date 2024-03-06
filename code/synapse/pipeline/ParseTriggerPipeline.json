@@ -4,7 +4,8 @@
 		"description": "Pipeline to parse trigger details.",
 		"activities": [
 			{
-				"name": "SetTestVariable",
+				"name": "SetExternalContainerNameVariable",
+				"description": "Set variable \"externalContainerName\"",
 				"type": "SetVariable",
 				"dependsOn": [],
 				"policy": {
@@ -13,11 +14,56 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "test",
+					"variableName": "externalContainerName",
 					"value": {
-						"value": "@concat(pipeline().parameters.triggerFilePath, pipeline().parameters.triggerFileName)",
+						"value": "@first(split(pipeline().parameters.triggerFilePath, '/'))",
 						"type": "Expression"
 					}
+				}
+			},
+			{
+				"name": "ReturnVariables",
+				"description": "Return variables to main pipeline.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SetExternalContainerNameVariable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "externalContainerName",
+							"value": {
+								"type": "Expression",
+								"content": "@variables('externalContainerName')"
+							}
+						},
+						{
+							"key": "externalDirectoryName",
+							"value": {
+								"type": "Expression",
+								"content": "@replace(pipeline().parameters.triggerFilePath, concat(variables('externalContainerName'), '/'), '')"
+							}
+						},
+						{
+							"key": "externalFileName",
+							"value": {
+								"type": "Expression",
+								"content": "@pipeline().parameters.triggerFileName"
+							}
+						}
+					],
+					"setSystemVariable": true
 				}
 			}
 		],
@@ -30,10 +76,18 @@
 			}
 		},
 		"variables": {
-			"test": {
+			"externalContainerName": {
+				"type": "String"
+			},
+			"externalDirectoryName": {
+				"type": "String"
+			},
+			"externalFileName": {
 				"type": "String"
 			}
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2024-03-06T17:32:46Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
 }
