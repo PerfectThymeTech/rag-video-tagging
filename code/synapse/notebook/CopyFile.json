@@ -1,0 +1,276 @@
+{
+	"name": "CopyFile",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "test",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
+			"numExecutors": 2,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "a362269a-3785-4059-8cc6-02b543ec23b0"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/8f171ff9-2b5b-4f0f-aed5-7fa360a1d094/resourceGroups/test-purview/providers/Microsoft.Synapse/workspaces/tstsynapse4/bigDataPools/test",
+				"name": "test",
+				"type": "Spark",
+				"endpoint": "https://tstsynapse4.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 10,
+				"cores": 8,
+				"memory": 56,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"tags": [
+						"parameters"
+					]
+				},
+				"source": [
+					"# General parameters\r\n",
+					"delete_source_file = True\r\n",
+					"exit_notebook_with_outputs = True\r\n",
+					"\r\n",
+					"# Source storage parameters\r\n",
+					"source_account_name = \"tstsynapsestg\"\r\n",
+					"source_container_name = \"external\"\r\n",
+					"source_directory_name = \"\"\r\n",
+					"source_file_name = \"movie.mp4\"\r\n",
+					"\r\n",
+					"# Sink storage parameters\r\n",
+					"sink_account_name = \"tstsynapsestg\"\r\n",
+					"sink_container_name = \"raw\"\r\n",
+					"sink_directory_name = \"\"\r\n",
+					""
+				],
+				"execution_count": 44
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Get Pipeline ID"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"import uuid\r\n",
+					"from notebookutils import mssparkutils\r\n",
+					"\r\n",
+					"pipeline_id = mssparkutils.runtime.context.get(\"pipelinejobid\")\r\n",
+					"if not pipeline_id:\r\n",
+					"    pipeline_id = f\"{uuid.uuid4()}\"\r\n",
+					""
+				],
+				"execution_count": 29
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"print(pipeline_id)"
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Copy Data"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Define source file path\r\n",
+					"source_adls_path = f\"abfss://{source_container_name}@{source_account_name}.dfs.core.windows.net/{source_directory_name}/{source_file_name}\"\r\n",
+					"\r\n",
+					"# Define sink file path\r\n",
+					"sink_directory_name = f\"{pipeline_id}/{sink_directory_name}\"\r\n",
+					"sink_adls_path = f\"abfss://{sink_container_name}@{sink_account_name}.dfs.core.windows.net/{sink_directory_name}\"\r\n",
+					""
+				],
+				"execution_count": 45
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"mssparkutils.fs.fastcp(\r\n",
+					"    src=source_adls_path,\r\n",
+					"    dest=sink_adls_path,\r\n",
+					"    recurse=False\r\n",
+					")\r\n",
+					""
+				],
+				"execution_count": 34
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Delete Source File"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"if delete_source_file:\r\n",
+					"    mssparkutils.fs.rm(\r\n",
+					"        dir=source_adls_path,\r\n",
+					"        recurse=False\r\n",
+					"    )\r\n",
+					""
+				],
+				"execution_count": 37
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Create outputs"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"outputs = {\r\n",
+					"    \"sink_adls_path\": sink_adls_path,\r\n",
+					"    \"sink_account_name\": sink_account_name,\r\n",
+					"    \"sink_container_name\": sink_container_name,\r\n",
+					"    \"sink_directory_name\": f\"{sink_directory_name}/{source_file_name}\"\r\n",
+					"}\r\n",
+					"\r\n",
+					"if exit_notebook_with_outputs:\r\n",
+					"    mssparkutils.notebook.exit(\r\n",
+					"        value=str(outputs)\r\n",
+					"    )\r\n",
+					""
+				],
+				"execution_count": 46
+			}
+		]
+	}
+}

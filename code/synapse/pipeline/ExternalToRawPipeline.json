@@ -1,0 +1,180 @@
+{
+	"name": "ExternalToRawPipeline",
+	"properties": {
+		"description": "Pipeline for moving data from external to the raw layer.",
+		"activities": [
+			{
+				"name": "ReturnVariable",
+				"description": "Return Variable to main pipeline.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "CopyExternalToRaw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "rawAdlsFilePath",
+							"value": {
+								"type": "Expression",
+								"content": "@json(activity('CopyExternalToRaw').output.status.Output.result.exitValue).sink_adls_path"
+							}
+						},
+						{
+							"key": "rawAccountName",
+							"value": {
+								"type": "Expression",
+								"content": "@json(activity('CopyExternalToRaw').output.status.Output.result.exitValue).sink_account_name"
+							}
+						},
+						{
+							"key": "rawContainerName",
+							"value": {
+								"type": "Expression",
+								"content": "@json(activity('CopyExternalToRaw').output.status.Output.result.exitValue).sink_container_name"
+							}
+						},
+						{
+							"key": "rawDirectoryName",
+							"value": {
+								"type": "Expression",
+								"content": "@json(activity('CopyExternalToRaw').output.status.Output.result.exitValue).sink_directory_name"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			},
+			{
+				"name": "CopyExternalToRaw",
+				"description": "Copy File from External to Raw",
+				"type": "SynapseNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebook": {
+						"referenceName": "CopyFile",
+						"type": "NotebookReference"
+					},
+					"parameters": {
+						"delete_source_file": {
+							"value": {
+								"value": "@variables('deleteSourceFile')",
+								"type": "Expression"
+							},
+							"type": "bool"
+						},
+						"source_account_name": {
+							"value": {
+								"value": "@pipeline().parameters.externalAccountName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_container_name": {
+							"value": {
+								"value": "@pipeline().parameters.externalContainerName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_directory_name": {
+							"value": {
+								"value": "@pipeline().parameters.externalDirectoryName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_file_name": {
+							"value": {
+								"value": "@pipeline().parameters.externalFileName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"sink_account_name": {
+							"value": {
+								"value": "@pipeline().parameters.rawAccountName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"sink_container_name": {
+							"value": {
+								"value": "@pipeline().parameters.rawContainerName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"sink_directory_name": {
+							"value": {
+								"value": "@pipeline().parameters.rawDirectoryName",
+								"type": "Expression"
+							},
+							"type": "string"
+						}
+					},
+					"snapshot": true,
+					"sparkPool": {
+						"referenceName": "test",
+						"type": "BigDataPoolReference"
+					},
+					"executorSize": "Small",
+					"conf": {
+						"spark.dynamicAllocation.enabled": true
+					},
+					"driverSize": "Small"
+				}
+			}
+		],
+		"parameters": {
+			"externalContainerName": {
+				"type": "string"
+			},
+			"externalDirectoryName": {
+				"type": "string"
+			},
+			"externalFileName": {
+				"type": "string"
+			},
+			"rawContainerName": {
+				"type": "string"
+			},
+			"rawDirectoryName": {
+				"type": "string"
+			},
+			"externalAccountName": {
+				"type": "string"
+			},
+			"rawAccountName": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"deleteSourceFile": {
+				"type": "Boolean",
+				"defaultValue": true
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-03-06T15:26:05Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}
