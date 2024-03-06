@@ -77,6 +77,14 @@
 						"rawDirectoryName": {
 							"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
 							"type": "Expression"
+						},
+						"curatedAccountName": {
+							"value": "@variables('curatedAccountName')",
+							"type": "Expression"
+						},
+						"curatedContainerName": {
+							"value": "@variables('curatedContainerName')",
+							"type": "Expression"
 						}
 					}
 				}
