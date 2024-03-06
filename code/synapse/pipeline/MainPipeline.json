@@ -111,10 +111,28 @@
 						"referenceName": "ParseTriggerPipeline",
 						"type": "PipelineReference"
 					},
-					"waitOnCompletion": true
+					"waitOnCompletion": true,
+					"parameters": {
+						"triggerFilePath": {
+							"value": "@pipeline().parameters.triggerFilePath",
+							"type": "Expression"
+						},
+						"triggerFileName": {
+							"value": "@pipeline().parameters.triggerFileName",
+							"type": "Expression"
+						}
+					}
 				}
 			}
 		],
+		"parameters": {
+			"triggerFilePath": {
+				"type": "string"
+			},
+			"triggerFileName": {
+				"type": "string"
+			}
+		},
 		"variables": {
 			"externalAccountName": {
 				"type": "String",
@@ -123,12 +141,6 @@
 			"externalContainerName": {
 				"type": "String",
 				"defaultValue": "external"
-			},
-			"externalDirectoryName": {
-				"type": "String"
-			},
-			"externalFileName": {
-				"type": "String"
 			},
 			"rawAccountName": {
 				"type": "String",
