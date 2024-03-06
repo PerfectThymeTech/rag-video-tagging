@@ -14,7 +14,10 @@
 				"userProperties": [],
 				"typeProperties": {
 					"variableName": "test",
-					"value": ""
+					"value": {
+						"value": "@concat(pipeline().parameters.triggerFilePath, pipeline().parameters.triggerFileName)",
+						"type": "Expression"
+					}
 				}
 			}
 		],
