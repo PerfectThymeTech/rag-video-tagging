@@ -197,7 +197,7 @@
 					},
 					"ifFalseActivities": [
 						{
-							"name": "FailExternalContainerName_copy2",
+							"name": "FailRawContainerName",
 							"type": "Fail",
 							"dependsOn": [],
 							"userProperties": [],
