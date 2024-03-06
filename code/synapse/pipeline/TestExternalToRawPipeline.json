@@ -17,8 +17,8 @@
 				}
 			},
 			{
-				"name": "GetPipelineVariable",
-				"description": "Get Pipeline Variable",
+				"name": "GetPipelineVariableRawAdlsFilePath",
+				"description": "Get Pipeline Variable \"rawAdlsFilePath\"",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -34,7 +34,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "sample",
+					"variableName": "rawAdlsFilePath",
 					"value": {
 						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAdlsFilePath)",
 						"type": "Expression"
@@ -43,7 +43,7 @@
 			}
 		],
 		"variables": {
-			"sample": {
+			"rawAdlsFilePath": {
 				"type": "String"
 			}
 		},
