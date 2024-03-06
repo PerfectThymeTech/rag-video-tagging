@@ -86,6 +86,9 @@
 				"type": "String"
 			}
 		},
+		"folder": {
+			"name": "ChildPipelines"
+		},
 		"annotations": [],
 		"lastPublishTime": "2024-03-06T17:32:46Z"
 	},
