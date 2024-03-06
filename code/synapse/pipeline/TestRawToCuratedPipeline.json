@@ -1,0 +1,273 @@
+{
+	"name": "TestRawToCuratedPipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "ExecuteRawToCuratedPipeline",
+				"description": "Execute Raw to Curated Pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "ExternalToRawPipeline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"externalDirectoryName": {
+							"value": "@string('')",
+							"type": "Expression"
+						},
+						"rawDirectoryName": {
+							"value": "@string('')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "GetPipelineVariableCuratedAdlsFilePath",
+				"description": "Get Pipeline Variable \"curatedAdlsFilePath\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteRawToCuratedPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "curatedAdlsFilePath",
+					"value": {
+						"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedAdlsFilePath)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "GetPipelineVariableRawAccountName",
+				"description": "Get Pipeline Variable \"rawAccountName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteRawToCuratedPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "curatedAccountName",
+					"value": {
+						"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedAccountName)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "GetPipelineVariableRawContainerName",
+				"description": "Get Pipeline Variable \"rawContainerName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteRawToCuratedPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "curatedContainerName",
+					"value": {
+						"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedContainerName)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "GetPipelineVariableRawDirectoryName",
+				"description": "Get Pipeline Variable \"rawDirectoryName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteRawToCuratedPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "curatedDirectoryName",
+					"value": {
+						"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedDirectoryName)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "IfRawAdlsFilePath",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableCuratedAdlsFilePath",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('curatedAdlsFilePath'), pipeline().parameters.expectedRawAdlsFilePath)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailRawAdlsFilePath",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IfRawAccountName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableRawAccountName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('rawAccountName'), pipeline().parameters.expectedRawAccountName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailRawAccountName",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IfRawContainerName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableRawContainerName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('rawContainerName'), pipeline().parameters.expectedRawContainerName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailRawContainerName",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IfRawDirectoryName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableRawDirectoryName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('rawDirectoryName'), pipeline().parameters.expectedRawDirectoryName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailRawDirectoryName",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"curatedAdlsFilePath": {
+				"type": "String"
+			},
+			"curatedAccountName": {
+				"type": "String"
+			},
+			"curatedContainerName": {
+				"type": "String"
+			},
+			"curatedDirectoryName": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Tests"
+		},
+		"annotations": []
+	}
+}
