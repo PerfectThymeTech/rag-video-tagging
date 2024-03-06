@@ -2,6 +2,32 @@
 	"name": "ParseTriggerPipeline",
 	"properties": {
 		"description": "Pipeline to parse trigger details.",
+		"activities": [
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "test",
+					"value": ""
+				}
+			}
+		],
+		"parameters": {
+			"triggerBody": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"test": {
+				"type": "String"
+			}
+		},
 		"annotations": []
 	}
 }

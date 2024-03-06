@@ -8,6 +8,9 @@
 				"pipelineReference": {
 					"referenceName": "ParseTriggerPipeline",
 					"type": "PipelineReference"
+				},
+				"parameters": {
+					"triggerBody": "@triggerBody().folderPath"
 				}
 			}
 		],
