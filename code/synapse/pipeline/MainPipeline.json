@@ -123,6 +123,27 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "ExecutePushToMetdataStorePipeline",
+				"description": "Execute Pipeline to push to metadata store",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "ExecuteRawToCuratedPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PushToMetdataStorePipeline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
 			}
 		],
 		"parameters": {
