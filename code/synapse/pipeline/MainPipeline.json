@@ -6,7 +6,14 @@
 				"name": "ExecuteExternalToRawPipeline",
 				"description": "Execute External to Raw Pipeline",
 				"type": "ExecutePipeline",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "ExecuteParseTriggerPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
 					"pipeline": {
@@ -16,11 +23,15 @@
 					"waitOnCompletion": true,
 					"parameters": {
 						"externalContainerName": {
-							"value": "@variables('externalContainerName')",
+							"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalContainerName)",
 							"type": "Expression"
 						},
 						"externalDirectoryName": {
-							"value": "@string('')",
+							"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalDirectoryName)",
+							"type": "Expression"
+						},
+						"externalFileName": {
+							"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalFileName)",
 							"type": "Expression"
 						},
 						"rawContainerName": {
@@ -87,6 +98,20 @@
 							"type": "Expression"
 						}
 					}
+				}
+			},
+			{
+				"name": "ExecuteParseTriggerPipeline",
+				"description": "Execute Pipeline to parse trigger information",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "ParseTriggerPipeline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
 				}
 			}
 		],
