@@ -40,10 +40,94 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "GetPipelineVariableRawAccountName",
+				"description": "Get Pipeline Variable \"rawAccountName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteExternalToRawPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rawAccountName",
+					"value": {
+						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "GetPipelineVariableRawContainerName",
+				"description": "Get Pipeline Variable \"rawContainerName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteExternalToRawPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rawContainerName",
+					"value": {
+						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "GetPipelineVariableRawDirectoryName",
+				"description": "Get Pipeline Variable \"rawDirectoryName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteExternalToRawPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rawDirectoryName",
+					"value": {
+						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"variables": {
 			"rawAdlsFilePath": {
+				"type": "String"
+			},
+			"rawAccountName": {
+				"type": "String"
+			},
+			"rawContainerName": {
+				"type": "String"
+			},
+			"rawDirectoryName": {
 				"type": "String"
 			}
 		},
