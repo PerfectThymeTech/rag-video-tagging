@@ -115,6 +115,130 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "IfRawAdlsFilePath",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableRawAdlsFilePath",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('rawAdlsFilePath'), pipeline().parameters.expectedRawAdlsFilePath)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailRawAdlsFilePath",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IfRawAccountName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableRawAccountName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('rawAccountName'), pipeline().parameters.expectedRawAccountName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailRawAccountName",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IfRawContainerName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableRawContainerName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('rawContainerName'), pipeline().parameters.expectedRawContainerName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailExternalContainerName_copy2",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IfRawDirectoryName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableRawDirectoryName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('rawDirectoryName'), pipeline().parameters.expectedRawDirectoryName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailRawDirectoryName",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
