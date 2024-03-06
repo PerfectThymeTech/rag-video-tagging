@@ -1,0 +1,7 @@
+{
+	"name": "ParseTriggerPipeline",
+	"properties": {
+		"description": "Pipeline to parse trigger details.",
+		"annotations": []
+	}
+}
