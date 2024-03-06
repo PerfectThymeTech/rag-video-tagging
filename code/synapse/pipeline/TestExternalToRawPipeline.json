@@ -117,6 +117,41 @@
 				}
 			}
 		],
+		"parameters": {
+			"externalContainerName": {
+				"type": "string"
+			},
+			"externalDirectoryName": {
+				"type": "string"
+			},
+			"externalFileName": {
+				"type": "string"
+			},
+			"rawContainerName": {
+				"type": "string"
+			},
+			"rawDirectoryName": {
+				"type": "string"
+			},
+			"externalAccountName": {
+				"type": "string"
+			},
+			"rawAccountName": {
+				"type": "string"
+			},
+			"expectedRawAdlsFilePath": {
+				"type": "string"
+			},
+			"expectedRawAccountName": {
+				"type": "string"
+			},
+			"expectedRawContainerName": {
+				"type": "string"
+			},
+			"expectedRawDirectoryName": {
+				"type": "string"
+			}
+		},
 		"variables": {
 			"rawAdlsFilePath": {
 				"type": "String"
