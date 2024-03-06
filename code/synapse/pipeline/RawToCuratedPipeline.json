@@ -165,7 +165,7 @@
 			"rawContainerName": {
 				"type": "string"
 			},
-			"rawFilePath": {
+			"rawDirectoryName": {
 				"type": "string"
 			},
 			"curatedAccountName": {
