@@ -40,6 +40,81 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "GetPipelineOutputRawAccountName",
+				"description": "Get Pipeline Output \"rawAccountName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteExternalToRawPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rawAccountName",
+					"value": {
+						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "GetPipelineOutputRawContainerName",
+				"description": "Get Pipeline Output \"rawContainerName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteExternalToRawPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rawContainerName",
+					"value": {
+						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "GetPipelineOutputRawDirectoryName",
+				"description": "Get Pipeline Output \"rawDirectoryName\"",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteExternalToRawPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rawDirectoryName",
+					"value": {
+						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"variables": {
