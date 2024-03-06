@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "tstsynapse4"
+		},
+		"tstsynapse4-WorkspaceDefaultSqlServer_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:tstsynapse4.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"AzureAiSpeech_properties_typeProperties_subscriptionId": {
+			"value": "8f171ff9-2b5b-4f0f-aed5-7fa360a1d094"
+		},
+		"AzureKeyVault_properties_typeProperties_baseUrl": {
+			"value": "https://mabuss-cog-kv.vault.azure.net/"
+		},
+		"AzureOpenAi_properties_typeProperties_subscriptionId": {
+			"value": "8f171ff9-2b5b-4f0f-aed5-7fa360a1d094"
+		},
+		"DataLakeCurated_properties_typeProperties_url": {
+			"value": "https://tstsynapsestg.dfs.core.windows.net/"
+		},
+		"DataLakeExternal_properties_typeProperties_url": {
+			"value": "https://tstsynapsestg.dfs.core.windows.net/"
+		},
+		"DataLakeRaw_properties_typeProperties_url": {
+			"value": "https://tstsynapsestg.dfs.core.windows.net/"
+		},
+		"DataLakeWorkspace_properties_typeProperties_url": {
+			"value": "https://tstsynapsestg.dfs.core.windows.net/"
+		},
+		"tstsynapse4-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://tstsynapsestg.dfs.core.windows.net"
+		},
+		"ExternalBlobTrigger_properties_ParseTriggerPipeline_parameters_triggerFilePath": {
+			"value": "@triggerBody().folderPath"
+		},
+		"ExternalBlobTrigger_properties_ParseTriggerPipeline_parameters_triggerFileName": {
+			"value": "@triggerBody().fileName"
+		},
+		"ExternalBlobTrigger_properties_typeProperties_scope": {
+			"value": "/subscriptions/8f171ff9-2b5b-4f0f-aed5-7fa360a1d094/resourceGroups/test-purview/providers/Microsoft.Storage/storageAccounts/tstsynapsestg"
+		}
+	}
+}
