@@ -13,7 +13,37 @@
 						"referenceName": "ExternalToRawPipeline",
 						"type": "PipelineReference"
 					},
-					"waitOnCompletion": true
+					"waitOnCompletion": true,
+					"parameters": {
+						"externalContainerName": {
+							"value": "@pipeline().parameters.externalContainerName",
+							"type": "Expression"
+						},
+						"externalDirectoryName": {
+							"value": "@string('')",
+							"type": "Expression"
+						},
+						"externalFileName": {
+							"value": "@pipeline().parameters.externalFileName",
+							"type": "Expression"
+						},
+						"rawContainerName": {
+							"value": "@pipeline().parameters.rawContainerName",
+							"type": "Expression"
+						},
+						"rawDirectoryName": {
+							"value": "@string('')",
+							"type": "Expression"
+						},
+						"externalAccountName": {
+							"value": "@pipeline().parameters.externalAccountName",
+							"type": "Expression"
+						},
+						"rawAccountName": {
+							"value": "@pipeline().parameters.rawAccountName",
+							"type": "Expression"
+						}
+					}
 				}
 			},
 			{
@@ -269,16 +299,20 @@
 				"defaultValue": "tstsynapsestg"
 			},
 			"expectedRawAdlsFilePath": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "abfss://raw@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/"
 			},
 			"expectedRawAccountName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "tstsynapsestg"
 			},
 			"expectedRawContainerName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "raw"
 			},
 			"expectedRawDirectoryName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "<pipeline-id>/movie.mp4"
 			}
 		},
 		"variables": {
