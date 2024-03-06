@@ -153,6 +153,58 @@
 					},
 					"driverSize": "Medium"
 				}
+			},
+			{
+				"name": "ReturnVariables",
+				"description": "Return variables to main pipeline.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ProcessNewsVideo",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "curatedAdlsFilePath",
+							"value": {
+								"type": "Expression",
+								"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_adls_path"
+							}
+						},
+						{
+							"key": "curatedAccountName",
+							"value": {
+								"type": "Expression",
+								"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_account_name"
+							}
+						},
+						{
+							"key": "curatedContainerName",
+							"value": {
+								"type": "Expression",
+								"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_container_name"
+							}
+						},
+						{
+							"key": "curatedDirectoryName",
+							"value": {
+								"type": "Expression",
+								"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_directory_name"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
 			}
 		],
 		"parameters": {
