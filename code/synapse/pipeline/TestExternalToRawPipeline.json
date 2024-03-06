@@ -1,0 +1,57 @@
+{
+	"name": "TestExternalToRawPipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "ExecuteExternalToRawPipeline",
+				"description": "Execute External to Raw Pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "ExternalToRawPipeline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "GetPipelineVariable",
+				"description": "Get Pipeline Variable",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ExecuteExternalToRawPipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "sample",
+					"value": {
+						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAdlsFilePath)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"variables": {
+			"sample": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Test"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-03-06T15:26:39Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

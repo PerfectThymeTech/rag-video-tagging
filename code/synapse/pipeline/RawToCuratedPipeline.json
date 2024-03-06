@@ -1,0 +1,224 @@
+{
+	"name": "RawToCuratedPipeline",
+	"properties": {
+		"description": "Pipeline for moving data from raw to the curated layer.",
+		"activities": [
+			{
+				"name": "ProcessNewsVideo",
+				"description": "Process Video file stored in raw layer.",
+				"type": "SynapseNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebook": {
+						"referenceName": "ProcessNewsVideo",
+						"type": "NotebookReference"
+					},
+					"parameters": {
+						"news_show_details": {
+							"value": {
+								"value": "@pipeline().parameters.newsShowDetails",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"azure_ai_speech_linked_service_name": {
+							"value": {
+								"value": "@variables('azureAiSpeechLinkedServiceName')",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"azure_ai_speech_region": {
+							"value": {
+								"value": "@variables('azureAiSpeechRegion')",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"azure_open_ai_linked_service_name": {
+							"value": {
+								"value": "@variables('azureOpenAiLinkedServiceName')",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"azure_open_ai_base_url": {
+							"value": {
+								"value": "@variables('azureOpenAiBaseUrl')",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"azure_open_ai_api_version": {
+							"value": {
+								"value": "@variables('azureOpenAiApiVersion')",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"azure_open_ai_deployment_name": {
+							"value": {
+								"value": "@variables('azureOpenAiDeploymentName')",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"azure_open_ai_model_name": {
+							"value": {
+								"value": "@variables('azureOpenAiModelName')",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_linked_service_name": {
+							"value": {
+								"value": "@pipeline().parameters.sourceLinkedServiceName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_mount_path": {
+							"value": {
+								"value": "@pipeline().parameters.sourceMountPath",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_account_name": {
+							"value": {
+								"value": "@pipeline().parameters.sourceAccountName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_container_name": {
+							"value": {
+								"value": "@pipeline().parameters.sourceContainerName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_file_path": {
+							"value": {
+								"value": "@pipeline().parameters.sourceFilePath",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"sink_linked_service_name": {
+							"value": {
+								"value": "@pipeline().parameters.sinkLinkedServiceName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"sink_mount_path": {
+							"value": {
+								"value": "@pipeline().parameters.sinkMountPath",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"sink_account_name": {
+							"value": {
+								"value": "@pipeline().parameters.sinkAccountName",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"sink_container_name": {
+							"value": {
+								"value": "@pipeline().parameters.sinkContainerName",
+								"type": "Expression"
+							},
+							"type": "string"
+						}
+					},
+					"snapshot": true,
+					"sparkPool": {
+						"referenceName": "test",
+						"type": "BigDataPoolReference"
+					},
+					"executorSize": "Medium",
+					"conf": {
+						"spark.dynamicAllocation.enabled": true
+					},
+					"driverSize": "Medium"
+				}
+			}
+		],
+		"parameters": {
+			"newsShowDetails": {
+				"type": "string"
+			},
+			"sourceLinkedServiceName": {
+				"type": "string"
+			},
+			"sourceMountPath": {
+				"type": "string"
+			},
+			"sourceAccountName": {
+				"type": "string"
+			},
+			"sourceContainerName": {
+				"type": "string"
+			},
+			"sourceFilePath": {
+				"type": "string"
+			},
+			"sinkLinkedServiceName": {
+				"type": "string"
+			},
+			"sinkMountPath": {
+				"type": "string"
+			},
+			"sinkAccountName": {
+				"type": "string"
+			},
+			"sinkContainerName": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"azureAiSpeechLinkedServiceName": {
+				"type": "String",
+				"defaultValue": "AzureAiSpeech"
+			},
+			"azureAiSpeechRegion": {
+				"type": "String",
+				"defaultValue": "swedencentral"
+			},
+			"azureOpenAiLinkedServiceName": {
+				"type": "String",
+				"defaultValue": "AzureOpenAi"
+			},
+			"azureOpenAiBaseUrl": {
+				"type": "String",
+				"defaultValue": "https://aoai-swedencentral-mabuss.openai.azure.com/"
+			},
+			"azureOpenAiApiVersion": {
+				"type": "String",
+				"defaultValue": "2023-05-15"
+			},
+			"azureOpenAiDeploymentName": {
+				"type": "String",
+				"defaultValue": "gpt-4-32k"
+			},
+			"azureOpenAiModelName": {
+				"type": "String",
+				"defaultValue": "gpt-4-32k"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-03-06T15:20:16Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

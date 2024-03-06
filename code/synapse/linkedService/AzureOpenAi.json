@@ -1,0 +1,28 @@
+{
+	"name": "AzureOpenAi",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "CognitiveService",
+		"typeProperties": {
+			"subscriptionId": "8f171ff9-2b5b-4f0f-aed5-7fa360a1d094",
+			"resourceGroup": "fdfrgrf_group",
+			"csName": "aoai-swedencentral-mabuss",
+			"csKind": "OpenAI",
+			"csLocation": "swedencentral",
+			"endPoint": "https://aoai-swedencentral-mabuss.openai.azure.com/",
+			"csKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "AzureKeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "openai-key"
+			}
+		},
+		"connectVia": {
+			"referenceName": "AutoResolveIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

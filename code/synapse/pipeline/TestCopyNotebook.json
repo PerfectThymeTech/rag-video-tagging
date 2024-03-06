@@ -1,0 +1,83 @@
+{
+	"name": "TestCopyNotebook",
+	"properties": {
+		"activities": [
+			{
+				"name": "TestCopyNotebook",
+				"description": "Copy File from External to Raw",
+				"type": "SynapseNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebook": {
+						"referenceName": "CopyFile",
+						"type": "NotebookReference"
+					},
+					"parameters": {
+						"delete_source_file": {
+							"value": true,
+							"type": "bool"
+						},
+						"source_account_name": {
+							"value": "tstsynapsestg",
+							"type": "string"
+						},
+						"source_container_name": {
+							"value": "external",
+							"type": "string"
+						},
+						"source_directory_name": {
+							"value": {
+								"value": "@string('')",
+								"type": "Expression"
+							},
+							"type": "string"
+						},
+						"source_file_name": {
+							"value": "movie.mp4",
+							"type": "string"
+						},
+						"sink_account_name": {
+							"value": "tstsynapsestg",
+							"type": "string"
+						},
+						"sink_container_name": {
+							"value": "raw",
+							"type": "string"
+						},
+						"sink_directory_name": {
+							"value": {
+								"value": "@string('')",
+								"type": "Expression"
+							},
+							"type": "string"
+						}
+					},
+					"snapshot": true,
+					"sparkPool": {
+						"referenceName": "test",
+						"type": "BigDataPoolReference"
+					},
+					"executorSize": "Small",
+					"conf": {
+						"spark.dynamicAllocation.enabled": true
+					},
+					"driverSize": "Small"
+				}
+			}
+		],
+		"folder": {
+			"name": "Test"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-03-06T14:35:56Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}
