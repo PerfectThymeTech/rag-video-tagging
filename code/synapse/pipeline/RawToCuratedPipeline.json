@@ -80,7 +80,7 @@
 						},
 						"source_linked_service_name": {
 							"value": {
-								"value": "@pipeline().parameters.rawLinkedServiceName",
+								"value": "@variables('rawLinkedServiceName')",
 								"type": "Expression"
 							},
 							"type": "string"
@@ -108,14 +108,14 @@
 						},
 						"source_file_path": {
 							"value": {
-								"value": "@pipeline().parameters.rawFilePath",
+								"value": "@pipeline().parameters.rawDirectoryName",
 								"type": "Expression"
 							},
 							"type": "string"
 						},
 						"sink_linked_service_name": {
 							"value": {
-								"value": "@pipeline().parameters.curatedLinkedServiceName",
+								"value": "@variables('curatedLinkedServiceName')",
 								"type": "Expression"
 							},
 							"type": "string"
