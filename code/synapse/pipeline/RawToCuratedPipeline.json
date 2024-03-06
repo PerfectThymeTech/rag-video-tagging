@@ -273,6 +273,9 @@
 				"defaultValue": "DataLakeCurated"
 			}
 		},
+		"folder": {
+			"name": "ChildPipelines"
+		},
 		"annotations": [],
 		"lastPublishTime": "2024-03-06T15:20:16Z"
 	},

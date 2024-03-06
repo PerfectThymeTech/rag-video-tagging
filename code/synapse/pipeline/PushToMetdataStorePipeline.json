@@ -13,6 +13,9 @@
 				}
 			}
 		],
+		"folder": {
+			"name": "ChildPipelines"
+		},
 		"annotations": []
 	}
 }
