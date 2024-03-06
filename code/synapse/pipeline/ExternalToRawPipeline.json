@@ -4,8 +4,8 @@
 		"description": "Pipeline for moving data from external to the raw layer.",
 		"activities": [
 			{
-				"name": "ReturnVariable",
-				"description": "Return Variable to main pipeline.",
+				"name": "ReturnVariables",
+				"description": "Return variables to main pipeline.",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -174,7 +174,7 @@
 			}
 		},
 		"annotations": [],
-		"lastPublishTime": "2024-03-06T15:26:05Z"
+		"lastPublishTime": "2024-03-06T17:33:23Z"
 	},
 	"type": "Microsoft.Synapse/workspaces/pipelines"
 }
