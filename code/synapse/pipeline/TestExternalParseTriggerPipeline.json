@@ -16,8 +16,14 @@
 					},
 					"waitOnCompletion": true,
 					"parameters": {
-						"triggerFilePath": "external/directory001",
-						"triggerFileName": "movie.mp4"
+						"triggerFilePath": {
+							"value": "@pipeline().parameters.triggerFilePath",
+							"type": "Expression"
+						},
+						"triggerFileName": {
+							"value": "@pipeline().parameters.triggerFileName",
+							"type": "Expression"
+						}
 					}
 				}
 			},
@@ -95,8 +101,123 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "IfExternalContainerName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableExternalContainerName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('externalContainerName'), pipeline().parameters.expectedExternalContainerName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailExternalContainerName",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IfExternalDirectoryName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableExternalDirectoryName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('externalDirectoryName'), pipeline().parameters.expectedExternalDirectoryName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailExternalContainerName_copy1",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IfExternalFileName",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "GetPipelineVariableExternalFileName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('externalFileName'), pipeline().parameters.expectedExternalFileName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FailExternalContainerName_copy1_copy1",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Unexpected Value",
+								"errorCode": "500"
+							}
+						}
+					]
+				}
 			}
 		],
+		"parameters": {
+			"triggerFilePath": {
+				"type": "string",
+				"defaultValue": "external/directory001"
+			},
+			"triggerFileName": {
+				"type": "string",
+				"defaultValue": "movie.mp4"
+			},
+			"expectedExternalContainerName": {
+				"type": "string",
+				"defaultValue": "external"
+			},
+			"expectedExternalDirectoryName": {
+				"type": "string",
+				"defaultValue": "directory001"
+			},
+			"expectedExternalFileName": {
+				"type": "string",
+				"defaultValue": "movie.mp4"
+			}
+		},
 		"variables": {
 			"externalContainerName": {
 				"type": "String"
