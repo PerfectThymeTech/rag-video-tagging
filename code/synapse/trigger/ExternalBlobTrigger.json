@@ -1,0 +1,25 @@
+{
+	"name": "ExternalBlobTrigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "ParseTriggerPipeline",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/external/blobs/",
+			"blobPathEndsWith": ".mp4",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/8f171ff9-2b5b-4f0f-aed5-7fa360a1d094/resourceGroups/test-purview/providers/Microsoft.Storage/storageAccounts/tstsynapsestg",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}
