@@ -160,7 +160,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('rawAdlsFilePath'), pipeline().parameters.expectedRawAdlsFilePath)",
+						"value": "@equals(variables('rawAdlsFilePath'), replace(pipeline().parameters.expectedRawAdlsFilePath, '<pipeline-id>', pipeline().GroupId))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -253,7 +253,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('rawDirectoryName'), pipeline().parameters.expectedRawDirectoryName)",
+						"value": "@equals(variables('rawDirectoryName'), replace(pipeline().parameters.expectedRawDirectoryName, '<pipeline-id>', pipeline().GroupId))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
