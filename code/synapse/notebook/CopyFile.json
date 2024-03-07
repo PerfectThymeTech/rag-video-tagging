@@ -18,14 +18,11 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "a362269a-3785-4059-8cc6-02b543ec23b0"
+				"spark.autotune.trackingId": "7a5dcc18-3413-4a89-9bdc-75640d9eb13f"
 			}
 		},
 		"metadata": {
 			"saveOutput": true,
-			"synapse_widget": {
-				"version": "0.1"
-			},
 			"enableDebugMode": false,
 			"kernelspec": {
 				"name": "synapse_pyspark",
@@ -41,14 +38,13 @@
 				"endpoint": "https://tstsynapse4.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test",
 				"auth": {
 					"type": "AAD",
-					"authResource": "https://dev.azuresynapse.net",
-					"authHeader": null
+					"authResource": "https://dev.azuresynapse.net"
 				},
 				"sparkVersion": "3.3",
 				"nodeCount": 10,
 				"cores": 8,
 				"memory": 56,
-				"extraHeader": null
+				"automaticScaleJobs": false
 			},
 			"sessionKeepAliveTimeout": 30
 		},
@@ -75,9 +71,10 @@
 					"sink_account_name = \"tstsynapsestg\"\r\n",
 					"sink_container_name = \"raw\"\r\n",
 					"sink_directory_name = \"\"\r\n",
+					"sink_file_name = \"movie.mp4\"\r\n",
 					""
 				],
-				"execution_count": 44
+				"execution_count": 5
 			},
 			{
 				"cell_type": "markdown",
@@ -114,7 +111,7 @@
 					"    pipeline_id = f\"{uuid.uuid4()}\"\r\n",
 					""
 				],
-				"execution_count": 29
+				"execution_count": 2
 			},
 			{
 				"cell_type": "code",
@@ -131,7 +128,8 @@
 				},
 				"source": [
 					"print(pipeline_id)"
-				]
+				],
+				"execution_count": 7
 			},
 			{
 				"cell_type": "markdown",
@@ -165,10 +163,10 @@
 					"\r\n",
 					"# Define sink file path\r\n",
 					"sink_directory_name = f\"{pipeline_id}/{sink_directory_name}\"\r\n",
-					"sink_adls_path = f\"abfss://{sink_container_name}@{sink_account_name}.dfs.core.windows.net/{sink_directory_name}\"\r\n",
+					"sink_adls_path = f\"abfss://{sink_container_name}@{sink_account_name}.dfs.core.windows.net/{sink_directory_name}/{sink_file_name}\"\r\n",
 					""
 				],
-				"execution_count": 45
+				"execution_count": 6
 			},
 			{
 				"cell_type": "code",
@@ -191,7 +189,7 @@
 					")\r\n",
 					""
 				],
-				"execution_count": 34
+				"execution_count": 8
 			},
 			{
 				"cell_type": "markdown",
@@ -260,7 +258,7 @@
 					"    \"sink_adls_path\": sink_adls_path,\r\n",
 					"    \"sink_account_name\": sink_account_name,\r\n",
 					"    \"sink_container_name\": sink_container_name,\r\n",
-					"    \"sink_directory_name\": f\"{sink_directory_name}/{source_file_name}\"\r\n",
+					"    \"sink_directory_name\": f\"{sink_directory_name}/{sink_file_name}\"\r\n",
 					"}\r\n",
 					"\r\n",
 					"if exit_notebook_with_outputs:\r\n",
