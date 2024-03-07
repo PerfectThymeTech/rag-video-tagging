@@ -32,10 +32,10 @@
 		"tstsynapse4-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"value": "https://tstsynapsestg.dfs.core.windows.net"
 		},
-		"ExternalBlobTrigger_properties_ParseTriggerPipeline_parameters_triggerFilePath": {
+		"ExternalBlobTrigger_properties_MainPipeline_parameters_triggerFilePath": {
 			"value": "@triggerBody().folderPath"
 		},
-		"ExternalBlobTrigger_properties_ParseTriggerPipeline_parameters_triggerFileName": {
+		"ExternalBlobTrigger_properties_MainPipeline_parameters_triggerFileName": {
 			"value": "@triggerBody().fileName"
 		},
 		"ExternalBlobTrigger_properties_typeProperties_scope": {

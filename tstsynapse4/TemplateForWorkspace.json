@@ -44,11 +44,11 @@
 			"type": "string",
 			"defaultValue": "https://tstsynapsestg.dfs.core.windows.net"
 		},
-		"ExternalBlobTrigger_properties_ParseTriggerPipeline_parameters_triggerFilePath": {
+		"ExternalBlobTrigger_properties_MainPipeline_parameters_triggerFilePath": {
 			"type": "string",
 			"defaultValue": "@triggerBody().folderPath"
 		},
-		"ExternalBlobTrigger_properties_ParseTriggerPipeline_parameters_triggerFileName": {
+		"ExternalBlobTrigger_properties_MainPipeline_parameters_triggerFileName": {
 			"type": "string",
 			"defaultValue": "@triggerBody().fileName"
 		},
@@ -69,8 +69,8 @@
 				"description": "Pipeline for moving data from external to the raw layer.",
 				"activities": [
 					{
-						"name": "ReturnVariable",
-						"description": "Return Variable to main pipeline.",
+						"name": "ReturnVariables",
+						"description": "Return variables to main pipeline.",
 						"type": "SetVariable",
 						"dependsOn": [
 							{
@@ -241,8 +241,11 @@
 						"defaultValue": true
 					}
 				},
+				"folder": {
+					"name": "ChildPipelines"
+				},
 				"annotations": [],
-				"lastPublishTime": "2024-03-06T15:26:05Z"
+				"lastPublishTime": "2024-03-06T17:33:23Z"
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/notebooks/CopyFile')]",
@@ -259,7 +262,14 @@
 						"name": "ExecuteExternalToRawPipeline",
 						"description": "Execute External to Raw Pipeline",
 						"type": "ExecutePipeline",
-						"dependsOn": [],
+						"dependsOn": [
+							{
+								"activity": "ExecuteParseTriggerPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
 						"userProperties": [],
 						"typeProperties": {
 							"pipeline": {
@@ -269,11 +279,15 @@
 							"waitOnCompletion": true,
 							"parameters": {
 								"externalContainerName": {
-									"value": "@variables('externalContainerName')",
+									"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalContainerName)",
 									"type": "Expression"
 								},
 								"externalDirectoryName": {
-									"value": "@string('')",
+									"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalDirectoryName)",
+									"type": "Expression"
+								},
+								"externalFileName": {
+									"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalFileName)",
 									"type": "Expression"
 								},
 								"rawContainerName": {
@@ -341,10 +355,64 @@
 								}
 							}
 						}
+					},
+					{
+						"name": "ExecuteParseTriggerPipeline",
+						"description": "Execute Pipeline to parse trigger information",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "ParseTriggerPipeline",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"triggerFilePath": {
+									"value": "@pipeline().parameters.triggerFilePath",
+									"type": "Expression"
+								},
+								"triggerFileName": {
+									"value": "@pipeline().parameters.triggerFileName",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "ExecutePushToMetdataStorePipeline",
+						"description": "Execute Pipeline to push to metadata store",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "ExecuteRawToCuratedPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PushToMetdataStorePipeline",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
 					}
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"triggerFilePath": {
+						"type": "string"
+					},
+					"triggerFileName": {
+						"type": "string"
+					}
 				},
 				"variables": {
 					"externalAccountName": {
@@ -354,12 +422,6 @@
 					"externalContainerName": {
 						"type": "String",
 						"defaultValue": "external"
-					},
-					"externalDirectoryName": {
-						"type": "String"
-					},
-					"externalFileName": {
-						"type": "String"
 					},
 					"rawAccountName": {
 						"type": "String",
@@ -382,11 +444,13 @@
 					}
 				},
 				"annotations": [],
-				"lastPublishTime": "2024-03-06T15:26:37Z"
+				"lastPublishTime": "2024-03-06T17:33:50Z"
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/pipelines/ExternalToRawPipeline')]",
-				"[concat(variables('workspaceId'), '/pipelines/RawToCuratedPipeline')]"
+				"[concat(variables('workspaceId'), '/pipelines/RawToCuratedPipeline')]",
+				"[concat(variables('workspaceId'), '/pipelines/ParseTriggerPipeline')]",
+				"[concat(variables('workspaceId'), '/pipelines/PushToMetdataStorePipeline')]"
 			]
 		},
 		{
@@ -397,7 +461,8 @@
 				"description": "Pipeline to parse trigger details.",
 				"activities": [
 					{
-						"name": "SetTestVariable",
+						"name": "SetExternalContainerNameVariable",
+						"description": "Set variable \"externalContainerName\"",
 						"type": "SetVariable",
 						"dependsOn": [],
 						"policy": {
@@ -406,11 +471,56 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"variableName": "test",
+							"variableName": "externalContainerName",
 							"value": {
-								"value": "@concat(pipeline().parameters.triggerFilePath, pipeline().parameters.triggerFileName)",
+								"value": "@first(split(pipeline().parameters.triggerFilePath, '/'))",
 								"type": "Expression"
 							}
+						}
+					},
+					{
+						"name": "ReturnVariables",
+						"description": "Return variables to main pipeline.",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "SetExternalContainerNameVariable",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "pipelineReturnValue",
+							"value": [
+								{
+									"key": "externalContainerName",
+									"value": {
+										"type": "Expression",
+										"content": "@variables('externalContainerName')"
+									}
+								},
+								{
+									"key": "externalDirectoryName",
+									"value": {
+										"type": "Expression",
+										"content": "@replace(pipeline().parameters.triggerFilePath, concat(variables('externalContainerName'), '/'), '')"
+									}
+								},
+								{
+									"key": "externalFileName",
+									"value": {
+										"type": "Expression",
+										"content": "@pipeline().parameters.triggerFileName"
+									}
+								}
+							],
+							"setSystemVariable": true
 						}
 					}
 				],
@@ -426,9 +536,46 @@
 					}
 				},
 				"variables": {
-					"test": {
+					"externalContainerName": {
+						"type": "String"
+					},
+					"externalDirectoryName": {
+						"type": "String"
+					},
+					"externalFileName": {
 						"type": "String"
 					}
+				},
+				"folder": {
+					"name": "ChildPipelines"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-03-06T17:32:46Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/PushToMetdataStorePipeline')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"description": "Pipeline to ush results to metadata store",
+				"activities": [
+					{
+						"name": "DummyWait",
+						"type": "Wait",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 1
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "ChildPipelines"
 				},
 				"annotations": []
 			},
@@ -591,6 +738,58 @@
 							},
 							"driverSize": "Medium"
 						}
+					},
+					{
+						"name": "ReturnVariables",
+						"description": "Return variables to main pipeline.",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ProcessNewsVideo",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "pipelineReturnValue",
+							"value": [
+								{
+									"key": "curatedAdlsFilePath",
+									"value": {
+										"type": "Expression",
+										"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_adls_path"
+									}
+								},
+								{
+									"key": "curatedAccountName",
+									"value": {
+										"type": "Expression",
+										"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_account_name"
+									}
+								},
+								{
+									"key": "curatedContainerName",
+									"value": {
+										"type": "Expression",
+										"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_container_name"
+									}
+								},
+								{
+									"key": "curatedDirectoryName",
+									"value": {
+										"type": "Expression",
+										"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_directory_name"
+									}
+								}
+							],
+							"setSystemVariable": true
+						}
 					}
 				],
 				"policy": {
@@ -662,6 +861,9 @@
 						"defaultValue": "DataLakeCurated"
 					}
 				},
+				"folder": {
+					"name": "ChildPipelines"
+				},
 				"annotations": [],
 				"lastPublishTime": "2024-03-06T15:20:16Z"
 			},
@@ -696,15 +898,24 @@
 							},
 							"parameters": {
 								"delete_source_file": {
-									"value": true,
+									"value": {
+										"value": "@pipeline().parameters.deleteSourceFile",
+										"type": "Expression"
+									},
 									"type": "bool"
 								},
 								"source_account_name": {
-									"value": "tstsynapsestg",
+									"value": {
+										"value": "@pipeline().parameters.sourceAccountName",
+										"type": "Expression"
+									},
 									"type": "string"
 								},
 								"source_container_name": {
-									"value": "external",
+									"value": {
+										"value": "@pipeline().parameters.sourceContainerName",
+										"type": "Expression"
+									},
 									"type": "string"
 								},
 								"source_directory_name": {
@@ -715,15 +926,24 @@
 									"type": "string"
 								},
 								"source_file_name": {
-									"value": "movie.mp4",
+									"value": {
+										"value": "@pipeline().parameters.sourceFileName",
+										"type": "Expression"
+									},
 									"type": "string"
 								},
 								"sink_account_name": {
-									"value": "tstsynapsestg",
+									"value": {
+										"value": "@pipeline().parameters.sinkAccountName",
+										"type": "Expression"
+									},
 									"type": "string"
 								},
 								"sink_container_name": {
-									"value": "raw",
+									"value": {
+										"value": "@pipeline().parameters.sinkContainerName",
+										"type": "Expression"
+									},
 									"type": "string"
 								},
 								"sink_directory_name": {
@@ -750,8 +970,40 @@
 				"policy": {
 					"elapsedTimeMetric": {}
 				},
+				"parameters": {
+					"deleteSourceFile": {
+						"type": "bool",
+						"defaultValue": true
+					},
+					"sourceAccountName": {
+						"type": "string",
+						"defaultValue": "tstsynapsestg"
+					},
+					"sourceContainerName": {
+						"type": "string",
+						"defaultValue": "raw"
+					},
+					"sourceDirectoryName": {
+						"type": "string"
+					},
+					"sourceFileName": {
+						"type": "string",
+						"defaultValue": "movie.mp4"
+					},
+					"sinkAccountName": {
+						"type": "string",
+						"defaultValue": "tstsynapsestg"
+					},
+					"sinkContainerName": {
+						"type": "string",
+						"defaultValue": "raw"
+					},
+					"sinkDirectoryName": {
+						"type": "string"
+					}
+				},
 				"folder": {
-					"name": "Test"
+					"name": "Tests"
 				},
 				"annotations": [],
 				"lastPublishTime": "2024-03-06T14:35:56Z"
@@ -759,6 +1011,252 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/notebooks/CopyFile')]",
 				"[concat(variables('workspaceId'), '/bigDataPools/test')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/TestExternalParseTriggerPipeline')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"description": "Test Pipeline for parsing trigger details",
+				"activities": [
+					{
+						"name": "ExecuteParseTriggerPipeline",
+						"description": "Execute Pipeline to parse trigger information",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "ParseTriggerPipeline",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"triggerFilePath": {
+									"value": "@pipeline().parameters.triggerFilePath",
+									"type": "Expression"
+								},
+								"triggerFileName": {
+									"value": "@pipeline().parameters.triggerFileName",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableExternalContainerName",
+						"description": "Get Pipeline Variable \"externalContainerName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteParseTriggerPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "externalContainerName",
+							"value": {
+								"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalContainerName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableExternalDirectoryName",
+						"description": "Get Pipeline Variable \"externalDirectoryName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteParseTriggerPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "externalDirectoryName",
+							"value": {
+								"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalDirectoryName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableExternalFileName",
+						"description": "Get Pipeline Variable \"externalFileName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteParseTriggerPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "externalFileName",
+							"value": {
+								"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalFileName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "IfExternalContainerName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableExternalContainerName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('externalContainerName'), pipeline().parameters.expectedExternalContainerName)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailExternalContainerName",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "IfExternalDirectoryName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableExternalDirectoryName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('externalDirectoryName'), pipeline().parameters.expectedExternalDirectoryName)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailExternalContainerName_copy1",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "IfExternalFileName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableExternalFileName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('externalFileName'), pipeline().parameters.expectedExternalFileName)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailExternalContainerName_copy1_copy1",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"triggerFilePath": {
+						"type": "string",
+						"defaultValue": "external/directory001"
+					},
+					"triggerFileName": {
+						"type": "string",
+						"defaultValue": "movie.mp4"
+					},
+					"expectedExternalContainerName": {
+						"type": "string",
+						"defaultValue": "external"
+					},
+					"expectedExternalDirectoryName": {
+						"type": "string",
+						"defaultValue": "directory001"
+					},
+					"expectedExternalFileName": {
+						"type": "string",
+						"defaultValue": "movie.mp4"
+					}
+				},
+				"variables": {
+					"externalContainerName": {
+						"type": "String"
+					},
+					"externalDirectoryName": {
+						"type": "String"
+					},
+					"externalFileName": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "Tests"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-03-06T15:26:39Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/pipelines/ParseTriggerPipeline')]"
 			]
 		},
 		{
@@ -779,12 +1277,41 @@
 								"type": "PipelineReference"
 							},
 							"waitOnCompletion": true,
-							"parameters": {}
+							"parameters": {
+								"externalContainerName": {
+									"value": "@pipeline().parameters.externalContainerName",
+									"type": "Expression"
+								},
+								"externalDirectoryName": {
+									"value": "@string('')",
+									"type": "Expression"
+								},
+								"externalFileName": {
+									"value": "@pipeline().parameters.externalFileName",
+									"type": "Expression"
+								},
+								"rawContainerName": {
+									"value": "@pipeline().parameters.rawContainerName",
+									"type": "Expression"
+								},
+								"rawDirectoryName": {
+									"value": "@string('')",
+									"type": "Expression"
+								},
+								"externalAccountName": {
+									"value": "@pipeline().parameters.externalAccountName",
+									"type": "Expression"
+								},
+								"rawAccountName": {
+									"value": "@pipeline().parameters.rawAccountName",
+									"type": "Expression"
+								}
+							}
 						}
 					},
 					{
-						"name": "GetPipelineVariable",
-						"description": "Get Pipeline Variable",
+						"name": "GetPipelineVariableRawAdlsFilePath",
+						"description": "Get Pipeline Variable \"rawAdlsFilePath\"",
 						"type": "SetVariable",
 						"dependsOn": [
 							{
@@ -800,30 +1327,624 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"variableName": "sample",
+							"variableName": "rawAdlsFilePath",
 							"value": {
 								"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAdlsFilePath)",
 								"type": "Expression"
 							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableRawAccountName",
+						"description": "Get Pipeline Variable \"rawAccountName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteExternalToRawPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "rawAccountName",
+							"value": {
+								"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableRawContainerName",
+						"description": "Get Pipeline Variable \"rawContainerName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteExternalToRawPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "rawContainerName",
+							"value": {
+								"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableRawDirectoryName",
+						"description": "Get Pipeline Variable \"rawDirectoryName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteExternalToRawPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "rawDirectoryName",
+							"value": {
+								"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "IfRawAdlsFilePath",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableRawAdlsFilePath",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('rawAdlsFilePath'), replace(pipeline().parameters.expectedRawAdlsFilePath, '<pipeline-id>', activity('ExecuteExternalToRawPipeline').output.pipelineRunId))",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailRawAdlsFilePath",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "IfRawAccountName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableRawAccountName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('rawAccountName'), pipeline().parameters.expectedRawAccountName)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailRawAccountName",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "IfRawContainerName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableRawContainerName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('rawContainerName'), pipeline().parameters.expectedRawContainerName)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailRawContainerName",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "IfRawDirectoryName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableRawDirectoryName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('rawDirectoryName'), replace(pipeline().parameters.expectedRawDirectoryName, '<pipeline-id>', activity('ExecuteExternalToRawPipeline').output.pipelineRunId))",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailRawDirectoryName",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
 						}
 					}
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
 				},
+				"parameters": {
+					"externalContainerName": {
+						"type": "string",
+						"defaultValue": "external"
+					},
+					"externalDirectoryName": {
+						"type": "string"
+					},
+					"externalFileName": {
+						"type": "string",
+						"defaultValue": "movie.mp4"
+					},
+					"rawContainerName": {
+						"type": "string",
+						"defaultValue": "raw"
+					},
+					"rawDirectoryName": {
+						"type": "string"
+					},
+					"externalAccountName": {
+						"type": "string",
+						"defaultValue": "tstsynapsestg"
+					},
+					"rawAccountName": {
+						"type": "string",
+						"defaultValue": "tstsynapsestg"
+					},
+					"expectedRawAdlsFilePath": {
+						"type": "string",
+						"defaultValue": "abfss://raw@tstsynapsestg.dfs.core.windows.net/<pipeline-id>//movie.mp4"
+					},
+					"expectedRawAccountName": {
+						"type": "string",
+						"defaultValue": "tstsynapsestg"
+					},
+					"expectedRawContainerName": {
+						"type": "string",
+						"defaultValue": "raw"
+					},
+					"expectedRawDirectoryName": {
+						"type": "string",
+						"defaultValue": "<pipeline-id>//movie.mp4"
+					}
+				},
 				"variables": {
-					"sample": {
+					"rawAdlsFilePath": {
+						"type": "String"
+					},
+					"rawAccountName": {
+						"type": "String"
+					},
+					"rawContainerName": {
+						"type": "String"
+					},
+					"rawDirectoryName": {
+						"type": "String"
+					},
+					"test": {
 						"type": "String"
 					}
 				},
 				"folder": {
-					"name": "Test"
+					"name": "Tests"
 				},
 				"annotations": [],
 				"lastPublishTime": "2024-03-06T15:26:39Z"
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/pipelines/ExternalToRawPipeline')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/TestRawToCuratedPipeline')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "ExecuteRawToCuratedPipeline",
+						"description": "Execute Raw to Curated Pipeline",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "RawToCuratedPipeline",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"newsShowDetails": {
+									"value": "@pipeline().parameters.newsShowDetails",
+									"type": "Expression"
+								},
+								"rawAccountName": {
+									"value": "@pipeline().parameters.rawAccountName",
+									"type": "Expression"
+								},
+								"rawContainerName": {
+									"value": "@pipeline().parameters.rawContainerName",
+									"type": "Expression"
+								},
+								"rawDirectoryName": {
+									"value": "@pipeline().parameters.rawDirectoryName",
+									"type": "Expression"
+								},
+								"curatedAccountName": {
+									"value": "@pipeline().parameters.curatedAccountName",
+									"type": "Expression"
+								},
+								"curatedContainerName": {
+									"value": "@pipeline().parameters.curatedContainerName",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableCuratedAdlsFilePath",
+						"description": "Get Pipeline Variable \"curatedAdlsFilePath\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteRawToCuratedPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "curatedAdlsFilePath",
+							"value": {
+								"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedAdlsFilePath)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableCuratedAccountName",
+						"description": "Get Pipeline Variable \"curatedAccountName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteRawToCuratedPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "curatedAccountName",
+							"value": {
+								"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedAccountName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableCuratedContainerName",
+						"description": "Get Pipeline Variable \"curatedContainerName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteRawToCuratedPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "curatedContainerName",
+							"value": {
+								"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedContainerName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetPipelineVariableCuratedDirectoryName",
+						"description": "Get Pipeline Variable \"curatedDirectoryName\"",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "ExecuteRawToCuratedPipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "curatedDirectoryName",
+							"value": {
+								"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedDirectoryName)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "IfCuratedAdlsFilePath",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableCuratedAdlsFilePath",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('curatedAdlsFilePath'), replace(pipeline().parameters.expectedCuratedAdlsFilePath, '<pipeline-id>', activity('ExecuteRawToCuratedPipeline').output.pipelineRunId))",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailRawAdlsFilePath",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "IfCuratedAccountName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableCuratedAccountName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('curatedAccountName'), pipeline().parameters.expectedCuratedAccountName)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailRawAccountName",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "IfCuratedContainerName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableCuratedContainerName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('curatedContainerName'), pipeline().parameters.expectedCuratedContainerName)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailRawContainerName",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "IfCuratedDirectoryName",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetPipelineVariableCuratedDirectoryName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(variables('curatedDirectoryName'), replace(pipeline().parameters.expectedCuratedDirectoryName, '<pipeline-id>', activity('ExecuteRawToCuratedPipeline').output.pipelineRunId))",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FailRawDirectoryName",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Unexpected Value",
+										"errorCode": "500"
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"newsShowDetails": {
+						"type": "string",
+						"defaultValue": "This is a news show."
+					},
+					"rawAccountName": {
+						"type": "string",
+						"defaultValue": "tstsynapsestg"
+					},
+					"rawContainerName": {
+						"type": "string",
+						"defaultValue": "raw"
+					},
+					"rawDirectoryName": {
+						"type": "string",
+						"defaultValue": "01004489-f156-47b3-88e3-661b3ddbd220/movie.mp4"
+					},
+					"curatedAccountName": {
+						"type": "string",
+						"defaultValue": "tstsynapsestg"
+					},
+					"curatedContainerName": {
+						"type": "string",
+						"defaultValue": "curated"
+					},
+					"expectedCuratedAdlsFilePath": {
+						"type": "string",
+						"defaultValue": "abfss://curated@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/audio.wav"
+					},
+					"expectedCuratedAccountName": {
+						"type": "string",
+						"defaultValue": "tstsynapsestg"
+					},
+					"expectedCuratedContainerName": {
+						"type": "string",
+						"defaultValue": "curated"
+					},
+					"expectedCuratedDirectoryName": {
+						"type": "string",
+						"defaultValue": "<pipeline-id>/audio.wav"
+					}
+				},
+				"variables": {
+					"curatedAdlsFilePath": {
+						"type": "String"
+					},
+					"curatedAccountName": {
+						"type": "String"
+					},
+					"curatedContainerName": {
+						"type": "String"
+					},
+					"curatedDirectoryName": {
+						"type": "String"
+					}
+				},
+				"folder": {
+					"name": "Tests"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/pipelines/RawToCuratedPipeline')]"
 			]
 		},
 		{
@@ -1035,12 +2156,12 @@
 				"pipelines": [
 					{
 						"pipelineReference": {
-							"referenceName": "ParseTriggerPipeline",
+							"referenceName": "MainPipeline",
 							"type": "PipelineReference"
 						},
 						"parameters": {
-							"triggerFilePath": "[parameters('ExternalBlobTrigger_properties_ParseTriggerPipeline_parameters_triggerFilePath')]",
-							"triggerFileName": "[parameters('ExternalBlobTrigger_properties_ParseTriggerPipeline_parameters_triggerFileName')]"
+							"triggerFilePath": "[parameters('ExternalBlobTrigger_properties_MainPipeline_parameters_triggerFilePath')]",
+							"triggerFileName": "[parameters('ExternalBlobTrigger_properties_MainPipeline_parameters_triggerFileName')]"
 						}
 					}
 				],
@@ -1056,7 +2177,7 @@
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/pipelines/ParseTriggerPipeline')]"
+				"[concat(variables('workspaceId'), '/pipelines/MainPipeline')]"
 			]
 		},
 		{
@@ -1132,14 +2253,11 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "a362269a-3785-4059-8cc6-02b543ec23b0"
+						"spark.autotune.trackingId": "67580919-9344-41d6-8333-41ef38d32c98"
 					}
 				},
 				"metadata": {
 					"saveOutput": true,
-					"synapse_widget": {
-						"version": "0.1"
-					},
 					"enableDebugMode": false,
 					"kernelspec": {
 						"name": "synapse_pyspark",
@@ -1155,14 +2273,13 @@
 						"endpoint": "https://tstsynapse4.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test",
 						"auth": {
 							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net",
-							"authHeader": null
+							"authResource": "https://dev.azuresynapse.net"
 						},
 						"sparkVersion": "3.3",
 						"nodeCount": 10,
 						"cores": 8,
 						"memory": 56,
-						"extraHeader": null
+						"automaticScaleJobs": false
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -1192,7 +2309,7 @@
 							""
 						],
 						"outputs": [],
-						"execution_count": 44
+						"execution_count": 5
 					},
 					{
 						"cell_type": "markdown",
@@ -1230,7 +2347,7 @@
 							""
 						],
 						"outputs": [],
-						"execution_count": 29
+						"execution_count": 2
 					},
 					{
 						"cell_type": "code",
@@ -1248,7 +2365,8 @@
 						"source": [
 							"print(pipeline_id)"
 						],
-						"outputs": []
+						"outputs": [],
+						"execution_count": 7
 					},
 					{
 						"cell_type": "markdown",
@@ -1281,12 +2399,14 @@
 							"source_adls_path = f\"abfss://{source_container_name}@{source_account_name}.dfs.core.windows.net/{source_directory_name}/{source_file_name}\"\r\n",
 							"\r\n",
 							"# Define sink file path\r\n",
+							"source_file_extension = source_file_name.split(\".\")[-1]\r\n",
 							"sink_directory_name = f\"{pipeline_id}/{sink_directory_name}\"\r\n",
-							"sink_adls_path = f\"abfss://{sink_container_name}@{sink_account_name}.dfs.core.windows.net/{sink_directory_name}\"\r\n",
+							"sink_file_name = f\"movie.{source_file_extension}\"\r\n",
+							"sink_adls_path = f\"abfss://{sink_container_name}@{sink_account_name}.dfs.core.windows.net/{sink_directory_name}/{sink_file_name}\"\r\n",
 							""
 						],
 						"outputs": [],
-						"execution_count": 45
+						"execution_count": 6
 					},
 					{
 						"cell_type": "code",
@@ -1310,7 +2430,7 @@
 							""
 						],
 						"outputs": [],
-						"execution_count": 34
+						"execution_count": 8
 					},
 					{
 						"cell_type": "markdown",
@@ -1380,7 +2500,7 @@
 							"    \"sink_adls_path\": sink_adls_path,\r\n",
 							"    \"sink_account_name\": sink_account_name,\r\n",
 							"    \"sink_container_name\": sink_container_name,\r\n",
-							"    \"sink_directory_name\": f\"{sink_directory_name}/{source_file_name}\"\r\n",
+							"    \"sink_directory_name\": f\"{sink_directory_name}/{sink_file_name}\"\r\n",
 							"}\r\n",
 							"\r\n",
 							"if exit_notebook_with_outputs:\r\n",
