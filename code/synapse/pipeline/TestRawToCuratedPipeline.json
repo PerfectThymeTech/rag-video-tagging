@@ -52,8 +52,8 @@
 				}
 			},
 			{
-				"name": "GetPipelineVariableRawAccountName",
-				"description": "Get Pipeline Variable \"rawAccountName\"",
+				"name": "GetPipelineVariableCuratedAccountName",
+				"description": "Get Pipeline Variable \"curatedAccountName\"",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -77,8 +77,8 @@
 				}
 			},
 			{
-				"name": "GetPipelineVariableRawContainerName",
-				"description": "Get Pipeline Variable \"rawContainerName\"",
+				"name": "GetPipelineVariableCuratedContainerName",
+				"description": "Get Pipeline Variable \"curatedContainerName\"",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -102,8 +102,8 @@
 				}
 			},
 			{
-				"name": "GetPipelineVariableRawDirectoryName",
-				"description": "Get Pipeline Variable \"rawDirectoryName\"",
+				"name": "GetPipelineVariableCuratedDirectoryName",
+				"description": "Get Pipeline Variable \"curatedDirectoryName\"",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -127,7 +127,7 @@
 				}
 			},
 			{
-				"name": "IfRawAdlsFilePath",
+				"name": "IfCuratedAdlsFilePath",
 				"type": "IfCondition",
 				"dependsOn": [
 					{
@@ -158,11 +158,11 @@
 				}
 			},
 			{
-				"name": "IfRawAccountName",
+				"name": "IfCuratedAccountName",
 				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "GetPipelineVariableRawAccountName",
+						"activity": "GetPipelineVariableCuratedAccountName",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -189,11 +189,11 @@
 				}
 			},
 			{
-				"name": "IfRawContainerName",
+				"name": "IfCuratedContainerName",
 				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "GetPipelineVariableRawContainerName",
+						"activity": "GetPipelineVariableCuratedContainerName",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -220,11 +220,11 @@
 				}
 			},
 			{
-				"name": "IfRawDirectoryName",
+				"name": "IfCuratedDirectoryName",
 				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "GetPipelineVariableRawDirectoryName",
+						"activity": "GetPipelineVariableCuratedDirectoryName",
 						"dependencyConditions": [
 							"Succeeded"
 						]
