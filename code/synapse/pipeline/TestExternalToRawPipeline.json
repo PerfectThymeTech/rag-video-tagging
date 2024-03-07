@@ -300,7 +300,7 @@
 			},
 			"expectedRawAdlsFilePath": {
 				"type": "string",
-				"defaultValue": "abfss://raw@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/"
+				"defaultValue": "abfss://raw@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/movie.mp4"
 			},
 			"expectedRawAccountName": {
 				"type": "string",
