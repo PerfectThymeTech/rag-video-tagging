@@ -156,7 +156,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('curatedAdlsFilePath'), replace(pipeline().parameters.expectedCuratedAdlsFilePath, '<pipeline-id>', pipeline().GroupId))",
+						"value": "@equals(variables('curatedAdlsFilePath'), replace(pipeline().parameters.expectedCuratedAdlsFilePath, '<pipeline-id>', activity('ExecuteRawToCuratedPipeline').output.pipelineRunId))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -249,7 +249,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('curatedDirectoryName'), replace(pipeline().parameters.expectedCuratedDirectoryName, '<pipeline-id>', pipeline().GroupId))",
+						"value": "@equals(variables('curatedDirectoryName'), replace(pipeline().parameters.expectedCuratedDirectoryName, '<pipeline-id>', activity('ExecuteRawToCuratedPipeline').output.pipelineRunId))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -282,7 +282,7 @@
 			},
 			"rawDirectoryName": {
 				"type": "string",
-				"defaultValue": "<pipeline-id>/movie.mp4"
+				"defaultValue": "01004489-f156-47b3-88e3-661b3ddbd220/movie.mp4"
 			},
 			"curatedAccountName": {
 				"type": "string",
