@@ -22,15 +22,24 @@
 					},
 					"parameters": {
 						"delete_source_file": {
-							"value": true,
+							"value": {
+								"value": "@pipeline().parameters.deleteSourceFile",
+								"type": "Expression"
+							},
 							"type": "bool"
 						},
 						"source_account_name": {
-							"value": "tstsynapsestg",
+							"value": {
+								"value": "@pipeline().parameters.sourceAccountName",
+								"type": "Expression"
+							},
 							"type": "string"
 						},
 						"source_container_name": {
-							"value": "external",
+							"value": {
+								"value": "@pipeline().parameters.sourceContainerName",
+								"type": "Expression"
+							},
 							"type": "string"
 						},
 						"source_directory_name": {
@@ -41,15 +50,24 @@
 							"type": "string"
 						},
 						"source_file_name": {
-							"value": "movie.mp4",
+							"value": {
+								"value": "@pipeline().parameters.sourceFileName",
+								"type": "Expression"
+							},
 							"type": "string"
 						},
 						"sink_account_name": {
-							"value": "tstsynapsestg",
+							"value": {
+								"value": "@pipeline().parameters.sinkAccountName",
+								"type": "Expression"
+							},
 							"type": "string"
 						},
 						"sink_container_name": {
-							"value": "raw",
+							"value": {
+								"value": "@pipeline().parameters.sinkContainerName",
+								"type": "Expression"
+							},
 							"type": "string"
 						},
 						"sink_directory_name": {
@@ -73,6 +91,38 @@
 				}
 			}
 		],
+		"parameters": {
+			"deleteSourceFile": {
+				"type": "bool",
+				"defaultValue": true
+			},
+			"sourceAccountName": {
+				"type": "string",
+				"defaultValue": "tstsynapsestg"
+			},
+			"sourceContainerName": {
+				"type": "string",
+				"defaultValue": "raw"
+			},
+			"sourceDirectoryName": {
+				"type": "string"
+			},
+			"sourceFileName": {
+				"type": "string",
+				"defaultValue": "movie.mp4"
+			},
+			"sinkAccountName": {
+				"type": "string",
+				"defaultValue": "tstsynapsestg"
+			},
+			"sinkContainerName": {
+				"type": "string",
+				"defaultValue": "raw"
+			},
+			"sinkDirectoryName": {
+				"type": "string"
+			}
+		},
 		"folder": {
 			"name": "Tests"
 		},
