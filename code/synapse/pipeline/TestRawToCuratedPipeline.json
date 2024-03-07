@@ -156,7 +156,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('curatedAdlsFilePath'), pipeline().parameters.expectedCuratedAdlsFilePath)",
+						"value": "@equals(variables('curatedAdlsFilePath'), replace(pipeline().parameters.expectedCuratedAdlsFilePath, '<pipeline-id>', pipeline().GroupId))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -187,7 +187,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('rawAccountName'), pipeline().parameters.expectedRawAccountName)",
+						"value": "@equals(variables('curatedAccountName'), pipeline().parameters.expectedCuratedAccountName)",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -218,7 +218,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('rawContainerName'), pipeline().parameters.expectedRawContainerName)",
+						"value": "@equals(variables('curatedContainerName'), pipeline().parameters.expectedCuratedContainerName)",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -249,7 +249,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('rawDirectoryName'), pipeline().parameters.expectedRawDirectoryName)",
+						"value": "@equals(variables('curatedDirectoryName'), replace(pipeline().parameters.expectedCuratedDirectoryName, '<pipeline-id>', pipeline().GroupId))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -291,6 +291,22 @@
 			"curatedContainerName": {
 				"type": "string",
 				"defaultValue": "curated"
+			},
+			"expectedCuratedAdlsFilePath": {
+				"type": "string",
+				"defaultValue": "abfss://curated@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/"
+			},
+			"expectedCuratedAccountName": {
+				"type": "string",
+				"defaultValue": "tstsynapsestg"
+			},
+			"expectedCuratedContainerName": {
+				"type": "string",
+				"defaultValue": "curated"
+			},
+			"expectedCuratedDirectoryName": {
+				"type": "string",
+				"defaultValue": "<pipeline-id>/audio.wav"
 			}
 		},
 		"variables": {
