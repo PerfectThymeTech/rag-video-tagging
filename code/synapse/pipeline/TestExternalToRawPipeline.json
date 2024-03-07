@@ -160,7 +160,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('rawAdlsFilePath'), replace(pipeline().parameters.expectedRawAdlsFilePath, '<pipeline-id>', pipeline().GroupId))",
+						"value": "@equals(variables('rawAdlsFilePath'), replace(pipeline().parameters.expectedRawAdlsFilePath, '<pipeline-id>', activity('ExecuteExternalToRawPipeline').output.value.pipelineRunId))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -253,7 +253,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('rawDirectoryName'), replace(pipeline().parameters.expectedRawDirectoryName, '<pipeline-id>', pipeline().GroupId))",
+						"value": "@equals(variables('rawDirectoryName'), replace(pipeline().parameters.expectedRawDirectoryName, '<pipeline-id>', activity('ExecuteExternalToRawPipeline').output.value.pipelineRunId))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -300,7 +300,7 @@
 			},
 			"expectedRawAdlsFilePath": {
 				"type": "string",
-				"defaultValue": "abfss://raw@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/movie.mp4"
+				"defaultValue": "abfss://raw@tstsynapsestg.dfs.core.windows.net/<pipeline-id>//movie.mp4"
 			},
 			"expectedRawAccountName": {
 				"type": "string",
@@ -312,7 +312,7 @@
 			},
 			"expectedRawDirectoryName": {
 				"type": "string",
-				"defaultValue": "<pipeline-id>/movie.mp4"
+				"defaultValue": "<pipeline-id>//movie.mp4"
 			}
 		},
 		"variables": {
@@ -326,6 +326,9 @@
 				"type": "String"
 			},
 			"rawDirectoryName": {
+				"type": "String"
+			},
+			"test": {
 				"type": "String"
 			}
 		},
