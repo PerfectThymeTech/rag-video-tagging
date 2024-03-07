@@ -15,8 +15,28 @@
 					},
 					"waitOnCompletion": true,
 					"parameters": {
+						"newsShowDetails": {
+							"value": "@pipeline().parameters.newsShowDetails",
+							"type": "Expression"
+						},
+						"rawAccountName": {
+							"value": "@pipeline().parameters.rawAccountName",
+							"type": "Expression"
+						},
+						"rawContainerName": {
+							"value": "@pipeline().parameters.rawContainerName",
+							"type": "Expression"
+						},
 						"rawDirectoryName": {
-							"value": "@string('')",
+							"value": "@pipeline().parameters.rawDirectoryName",
+							"type": "Expression"
+						},
+						"curatedAccountName": {
+							"value": "@pipeline().parameters.curatedAccountName",
+							"type": "Expression"
+						},
+						"curatedContainerName": {
+							"value": "@pipeline().parameters.curatedContainerName",
 							"type": "Expression"
 						}
 					}
@@ -249,11 +269,28 @@
 		],
 		"parameters": {
 			"newsShowDetails": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "This is a news show."
 			},
 			"rawAccountName": {
 				"type": "string",
 				"defaultValue": "tstsynapsestg"
+			},
+			"rawContainerName": {
+				"type": "string",
+				"defaultValue": "raw"
+			},
+			"rawDirectoryName": {
+				"type": "string",
+				"defaultValue": "<pipeline-id>/movie.mp4"
+			},
+			"curatedAccountName": {
+				"type": "string",
+				"defaultValue": "tstsynapsestg"
+			},
+			"curatedContainerName": {
+				"type": "string",
+				"defaultValue": "curated"
 			}
 		},
 		"variables": {
