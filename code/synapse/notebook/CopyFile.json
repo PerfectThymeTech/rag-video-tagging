@@ -18,7 +18,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "7a5dcc18-3413-4a89-9bdc-75640d9eb13f"
+				"spark.autotune.trackingId": "2718adbd-655c-4642-91e4-6a749ba4d1f7"
 			}
 		},
 		"metadata": {
@@ -71,7 +71,6 @@
 					"sink_account_name = \"tstsynapsestg\"\r\n",
 					"sink_container_name = \"raw\"\r\n",
 					"sink_directory_name = \"\"\r\n",
-					"sink_file_name = \"movie.mp4\"\r\n",
 					""
 				],
 				"execution_count": 5
@@ -162,7 +161,9 @@
 					"source_adls_path = f\"abfss://{source_container_name}@{source_account_name}.dfs.core.windows.net/{source_directory_name}/{source_file_name}\"\r\n",
 					"\r\n",
 					"# Define sink file path\r\n",
+					"source_file_extension = source_file_name.split(\".\")[-1]\r\n",
 					"sink_directory_name = f\"{pipeline_id}/{sink_directory_name}\"\r\n",
+					"sink_file_name = f\"movie.{source_file_extension}\"\r\n",
 					"sink_adls_path = f\"abfss://{sink_container_name}@{sink_account_name}.dfs.core.windows.net/{sink_directory_name}/{sink_file_name}\"\r\n",
 					""
 				],
