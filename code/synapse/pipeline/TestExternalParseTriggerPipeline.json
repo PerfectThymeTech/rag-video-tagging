@@ -45,7 +45,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "rawAdlsFilePath",
+					"variableName": "externalContainerName",
 					"value": {
 						"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalContainerName)",
 						"type": "Expression"
