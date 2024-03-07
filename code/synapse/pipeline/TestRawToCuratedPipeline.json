@@ -294,7 +294,7 @@
 			},
 			"expectedCuratedAdlsFilePath": {
 				"type": "string",
-				"defaultValue": "abfss://curated@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/"
+				"defaultValue": "abfss://curated@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/audio.wav"
 			},
 			"expectedCuratedAccountName": {
 				"type": "string",
