@@ -10,15 +10,11 @@
 				"userProperties": [],
 				"typeProperties": {
 					"pipeline": {
-						"referenceName": "ExternalToRawPipeline",
+						"referenceName": "RawToCuratedPipeline",
 						"type": "PipelineReference"
 					},
 					"waitOnCompletion": true,
 					"parameters": {
-						"externalDirectoryName": {
-							"value": "@string('')",
-							"type": "Expression"
-						},
 						"rawDirectoryName": {
 							"value": "@string('')",
 							"type": "Expression"
@@ -140,7 +136,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('curatedAdlsFilePath'), pipeline().parameters.expectedRawAdlsFilePath)",
+						"value": "@equals(variables('curatedAdlsFilePath'), pipeline().parameters.expectedCuratedAdlsFilePath)",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -251,6 +247,15 @@
 				}
 			}
 		],
+		"parameters": {
+			"newsShowDetails": {
+				"type": "string"
+			},
+			"rawAccountName": {
+				"type": "string",
+				"defaultValue": "tstsynapsestg"
+			}
+		},
 		"variables": {
 			"curatedAdlsFilePath": {
 				"type": "String"
