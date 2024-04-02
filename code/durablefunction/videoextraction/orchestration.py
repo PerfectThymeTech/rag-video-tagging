@@ -43,26 +43,35 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
 
     # Extract video clips
     logging.info("Extract video clips")
-    input_extract_video_clip = {
-        "video_file_path": result_download_video,
-        "instance_id": context.instance_id,
-        "start": "19.570367",
-        "offset": "15.570367",
-    }
-    result_extract_video_clip = yield context.call_activity(
-        "extract_video_clip", json.dumps(input_extract_video_clip)
-    )
+    tasks_extract_video_clip = []
+    for timestamp in payload_obj.timestamps:
+        input_extract_video_clip = {
+            "video_file_path": result_download_video,
+            "instance_id": context.instance_id,
+            "start": timestamp.start,
+            "offset": timestamp.offset,
+        }
+        tasks_extract_video_clip.append(
+            context.call_activity(
+                "extract_video_clip", json.dumps(input_extract_video_clip)
+            )
+        )
+    results_extract_video_clip = yield context.task_all(tasks_extract_video_clip)
 
     # Upload video clip
-    input_upload_video = {
-        "video_file_path": result_extract_video_clip,
-        "instance_id": context.instance_id,
-        "storage_account_name": settings.STORAGE_ACCOUNT_NAME,
-        "storage_container_name": settings.STORAGE_ACCOUNT_CONTAINER,
-    }
-    result_upload_video = yield context.call_activity(
-        "upload_video", json.dumps(input_upload_video)
-    )
+    logging.info("Upload video clips")
+    tasks_upload_video_clips = []
+    for video_clip in results_extract_video_clip:
+        input_upload_video = {
+            "video_file_path": video_clip,
+            "instance_id": context.instance_id,
+            "storage_account_name": settings.STORAGE_ACCOUNT_NAME,
+            "storage_container_name": settings.STORAGE_ACCOUNT_CONTAINER,
+        }
+        tasks_upload_video_clips.append(
+            context.call_activity("upload_video", json.dumps(input_upload_video))
+        )
+    results_upload_video = yield context.task_all(tasks_upload_video_clips)
 
     # Delete Video test
     logging.info("Deleting video")
@@ -70,11 +79,9 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
         "video_file_path": result_download_video,
         "instance_id": context.instance_id,
     }
-    result_delete_video = yield context.call_activity(
-        "delete_video", json.dumps(input_delete_video)
-    )
+    _ = yield context.call_activity("delete_video", json.dumps(input_delete_video))
 
-    return [result_upload_video]
+    return [results_upload_video]
 
 
 @bp.activity_trigger(input_name="inputJson")  # , activity="ExtractVideoClip")
@@ -127,7 +134,7 @@ def extract_video_clip(inputJson: str):
 
 
 @bp.activity_trigger(input_name="inputJson")  # , activity="DownloadVideo")
-async def download_video(inputJson: str):
+async def download_video(inputJson: str) -> str:
     logging.info(f"Download video input: {inputJson}")
 
     # Parse input
@@ -184,7 +191,6 @@ async def upload_video(inputJson: str):
         video_file_path = input_data_dict.get("video_file_path")
         storage_account_name = input_data_dict.get("storage_account_name")
         storage_container_name = input_data_dict.get("storage_container_name")
-        # storage_blob_name = input_data_dict.get("storage_blob_name")
         instance_id = input_data_dict.get("instance_id")
 
         if (
