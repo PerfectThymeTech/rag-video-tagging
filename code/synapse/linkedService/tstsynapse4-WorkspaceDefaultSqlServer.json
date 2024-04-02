@@ -1,20 +1,20 @@
 {
-	"name": "tstsynapse4-WorkspaceDefaultSqlServer",
-	"type": "Microsoft.Synapse/workspaces/linkedservices",
-	"properties": {
-		"typeProperties": {
-			"connectionString": "Data Source=tcp:tstsynapse4.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
-		},
-		"parameters": {
-			"DBName": {
-				"type": "String"
-			}
-		},
-		"type": "AzureSqlDW",
-		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
-			"type": "IntegrationRuntimeReference"
-		},
-		"annotations": []
-	}
+  "name": "tstsynapse4-WorkspaceDefaultSqlServer",
+  "type": "Microsoft.Synapse/workspaces/linkedservices",
+  "properties": {
+    "typeProperties": {
+      "connectionString": "Data Source=tcp:tstsynapse4.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+    },
+    "parameters": {
+      "DBName": {
+        "type": "String"
+      }
+    },
+    "type": "AzureSqlDW",
+    "connectVia": {
+      "referenceName": "AutoResolveIntegrationRuntime",
+      "type": "IntegrationRuntimeReference"
+    },
+    "annotations": []
+  }
 }

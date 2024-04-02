@@ -1,861 +1,861 @@
 {
-	"name": "ProcessNewsVideo",
-	"properties": {
-		"description": "Process News Video using Azure AI Speech and Azure Open AI. ",
-		"nbformat": 4,
-		"nbformat_minor": 2,
-		"bigDataPool": {
-			"referenceName": "test",
-			"type": "BigDataPoolReference"
-		},
-		"sessionProperties": {
-			"driverMemory": "56g",
-			"driverCores": 8,
-			"executorMemory": "56g",
-			"executorCores": 8,
-			"numExecutors": 2,
-			"runAsWorkspaceSystemIdentity": false,
-			"conf": {
-				"spark.dynamicAllocation.enabled": "false",
-				"spark.dynamicAllocation.minExecutors": "2",
-				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "955c85d8-f27c-4a4e-8517-2694e3d7853c"
-			}
-		},
-		"metadata": {
-			"saveOutput": true,
-			"synapse_widget": {
-				"version": "0.1"
-			},
-			"enableDebugMode": false,
-			"kernelspec": {
-				"name": "synapse_pyspark",
-				"display_name": "Synapse PySpark"
-			},
-			"language_info": {
-				"name": "python"
-			},
-			"a365ComputeOptions": {
-				"id": "/subscriptions/8f171ff9-2b5b-4f0f-aed5-7fa360a1d094/resourceGroups/test-purview/providers/Microsoft.Synapse/workspaces/tstsynapse4/bigDataPools/test",
-				"name": "test",
-				"type": "Spark",
-				"endpoint": "https://tstsynapse4.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test",
-				"auth": {
-					"type": "AAD",
-					"authResource": "https://dev.azuresynapse.net",
-					"authHeader": null
-				},
-				"sparkVersion": "3.3",
-				"nodeCount": 10,
-				"cores": 8,
-				"memory": 56,
-				"extraHeader": null
-			},
-			"sessionKeepAliveTimeout": 30
-		},
-		"cells": [
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					},
-					"tags": [
-						"parameters"
-					]
-				},
-				"source": [
-					"# General parameters\r\n",
-					"news_show_details=\"This is a german news show summarizing the events of the 15th February 2024.\"\r\n",
-					"\r\n",
-					"# Azure Speech \r\n",
-					"azure_ai_speech_linked_service_name = \"AzureAiSpeech\"\r\n",
-					"azure_ai_speech_region = \"swedencentral\"\r\n",
-					"\r\n",
-					"azure_open_ai_linked_service_name = \"AzureOpenAi\"\r\n",
-					"azure_open_ai_base_url=\"https://aoai-swedencentral-mabuss.openai.azure.com/\"\r\n",
-					"azure_open_ai_api_version=\"2023-05-15\"\r\n",
-					"azure_open_ai_deployment_name=\"gpt-4-32k\"\r\n",
-					"azure_open_ai_model_name=\"gpt-4-32k\"\r\n",
-					"\r\n",
-					"# Raw storage parameters\r\n",
-					"raw_linked_service_name = \"AzureDataLakeStorage\"\r\n",
-					"raw_mount_path = \"raw-videos\"\r\n",
-					"\r\n",
-					"raw_account_name = \"tstsynapsestg\"\r\n",
-					"raw_container_name = \"video\"\r\n",
-					"raw_file_path = \"movie.mp4\"\r\n",
-					"\r\n",
-					"# Curated storage parameters\r\n",
-					"curated_linked_service_name = \"AzureDataLakeStorage\"\r\n",
-					"curated_mount_path = \"curated-videos\"\r\n",
-					"\r\n",
-					"curated_account_name = \"tstsynapsestg\"\r\n",
-					"curated_container_name = \"curated\"\r\n",
-					"curated_file_path = \"movie.mp4\"\r\n",
-					""
-				],
-				"execution_count": 23
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"### Get Pipeline ID"
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"import uuid\r\n",
-					"from notebookutils import mssparkutils\r\n",
-					"\r\n",
-					"pipeline_id = mssparkutils.runtime.context.get(\"pipelinejobid\")\r\n",
-					"if not pipeline_id:\r\n",
-					"    pipeline_id = f\"{uuid.uuid4()}\"\r\n",
-					""
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"print(pipeline_id)"
-				]
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"### Mount Data Lake"
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"from notebookutils import mssparkutils\r\n",
-					"\r\n",
-					"\r\n",
-					"def mount_datalake_gen2(account_name: str, container_name: str, mount_path: str, linked_service_name: str) -> str:\r\n",
-					"    # Mount ADLS Gen2\r\n",
-					"    mssparkutils.fs.mount( \r\n",
-					"        f\"abfss://{container_name}@{account_name}.dfs.core.windows.net\", \r\n",
-					"        f\"/{mount_path}\",\r\n",
-					"        {\r\n",
-					"            \"LinkedService\": linked_service_name,\r\n",
-					"            \"fileCacheTimeout\": 120,\r\n",
-					"            \"timeout\": 120\r\n",
-					"        }\r\n",
-					"    )\r\n",
-					"\r\n",
-					"    # Compute mount point and return value\r\n",
-					"    mount_path_cluster = mssparkutils.fs.getMountPath(f\"/{mount_path}\")\r\n",
-					"    return mount_path_cluster\r\n",
-					"\r\n",
-					"\r\n",
-					"def unmount_datalake_gen2(mount_path: str) -> None:\r\n",
-					"    mssparkutils.fs.unmount(f\"/{mount_path}\")\r\n",
-					""
-				],
-				"execution_count": 24
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"# Mount raw storage\r\n",
-					"raw_mount_path_cluster = mount_datalake_gen2(\r\n",
-					"    account_name=raw_account_name,\r\n",
-					"    container_name=raw_container_name,\r\n",
-					"    mount_path=raw_mount_path,\r\n",
-					"    linked_service_name=raw_linked_service_name,\r\n",
-					")\r\n",
-					"\r\n",
-					"# Mount curated storage\r\n",
-					"curated_mount_path_cluster = mount_datalake_gen2(\r\n",
-					"    account_name=curated_account_name,\r\n",
-					"    container_name=curated_container_name,\r\n",
-					"    mount_path=curated_mount_path,\r\n",
-					"    linked_service_name=curated_linked_service_name,\r\n",
-					")\r\n",
-					""
-				],
-				"execution_count": 25
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"### Extract Audio from Video"
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"import os\r\n",
-					"\r\n",
-					"from moviepy.editor import VideoFileClip, AudioFileClip\r\n",
-					"\r\n",
-					"\r\n",
-					"def extract_audio_from_video(video_filepath: str, audio_filepath: str, audio_filename: str = \"audio.wav\") -> AudioFileClip:\r\n",
-					"    # Load video file\r\n",
-					"    video = VideoFileClip(\r\n",
-					"        filename=video_filepath,\r\n",
-					"        has_mask=False,\r\n",
-					"        audio=True\r\n",
-					"    )\r\n",
-					"\r\n",
-					"    # Get audio file path\r\n",
-					"    os.makedirs(audio_filepath, exist_ok=True)\r\n",
-					"    audio_filepath = os.path.join(audio_filepath, audio_filename)\r\n",
-					"\r\n",
-					"    # Extract, write and return audio\r\n",
-					"    audio = video.audio\r\n",
-					"    audio.write_audiofile(audio_filepath) #, nbytes=2, codec=\"pcm_s16le\", bitrate=\"16k\", ffmpeg_params=[\"-ac\", \"1\"])\r\n",
-					"    return audio\r\n",
-					""
-				],
-				"execution_count": 26
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"video_filepath = f\"{raw_mount_path_cluster}/{raw_file_path}\"\r\n",
-					"audio_filepath = f\"{curated_mount_path_cluster}/{pipeline_id}\"\r\n",
-					"audio_filename = \"audio.wav\"\r\n",
-					"\r\n",
-					"audio = extract_audio_from_video(\r\n",
-					"    video_filepath=video_filepath,\r\n",
-					"    audio_filepath=audio_filepath,\r\n",
-					"    audio_filename=audio_filename\r\n",
-					")"
-				],
-				"execution_count": 27
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"### Speech to text"
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"import asyncio\r\n",
-					"import httpx\r\n",
-					"import time\r\n",
-					"import uuid\r\n",
-					"import logging\r\n",
-					"import json\r\n",
-					"\r\n",
-					"from typing import List, Any\r\n",
-					"from httpx import Response\r\n",
-					"\r\n",
-					"\r\n",
-					"async def start_batch_transcription(azure_ai_speech_region: str, azure_ai_speech_key: str, azure_ai_speech_content_urls: List[str]) -> Response:\r\n",
-					"    # Define url\r\n",
-					"    base_url = f\"https://{azure_ai_speech_region}.api.cognitive.microsoft.com\"\r\n",
-					"    transcription_url = f\"{base_url}/speechtotext/v3.2-preview.1/transcriptions\"\r\n",
-					"    # model_url = f\"{base_url}/speechtotext/v3.2-preview.1/models/base/3765174c-b02f-40ba-bb4b-cd2332ec8a2e\"\r\n",
-					"\r\n",
-					"    # Define headers\r\n",
-					"    headers = {\r\n",
-					"        \"Content-Type\": \"application/json\",\r\n",
-					"        \"Ocp-Apim-Subscription-Key\": azure_ai_speech_key,\r\n",
-					"    }\r\n",
-					"\r\n",
-					"    # Define body\r\n",
-					"    body = {\r\n",
-					"        \"displayName\": f\"{uuid.uuid4()}\",\r\n",
-					"        \"description\": \"STT for files\",\r\n",
-					"        \"locale\": \"de-DE\",\r\n",
-					"        \"contentUrls\": azure_ai_speech_content_urls,\r\n",
-					"        # \"channels\": [0, 1],\r\n",
-					"        # \"contentContainerUrl\": \"https://tstsynapsestg.blob.core.windows.net/audio\", # azure_ai_speech_content_container_url,\r\n",
-					"        # \"model\": {\r\n",
-					"        #     \"self\": model_url\r\n",
-					"        # },\r\n",
-					"        \"properties\": {\r\n",
-					"            # \"languageIdentification\": {\r\n",
-					"            #     \"candidateLocales\": [\"en-US\", \"de-DE\", \"es-ES\"]\r\n",
-					"            # },\r\n",
-					"            # \"destinationContainerUrl\": azure_ai_speech_sink_container_url, # TODO: Specify container sink to store result on customer storage\r\n",
-					"            \"wordLevelTimestampsEnabled\": False,\r\n",
-					"            \"displayFormWordLevelTimestampsEnabled\": True,\r\n",
-					"            \"diarizationEnabled\": False,\r\n",
-					"            # \"diarization\": 1,\r\n",
-					"            \"punctuationMode\": \"DictatedAndAutomatic\",\r\n",
-					"            \"profanityFilterMode\": \"None\",\r\n",
-					"            \"timeToLive\": \"PT12H\"\r\n",
-					"        },\r\n",
-					"        \"customProperties\": {}\r\n",
-					"    }\r\n",
-					"\r\n",
-					"    async with httpx.AsyncClient() as client:\r\n",
-					"        response = await client.post(url=transcription_url, headers=headers, json=body)\r\n",
-					"    return response\r\n",
-					"\r\n",
-					"\r\n",
-					"async def get_batch_transcription_status(azure_ai_speech_region: str, azure_ai_speech_key: str, azure_ai_speech_transcription_id: str) -> Response:\r\n",
-					"    # Define url\r\n",
-					"    base_url = f\"https://{azure_ai_speech_region}.api.cognitive.microsoft.com\"\r\n",
-					"    transcription_url = f\"{base_url}/speechtotext/v3.1/transcriptions/{azure_ai_speech_transcription_id}\"\r\n",
-					"    \r\n",
-					"    # Define headers\r\n",
-					"    headers = {\r\n",
-					"        \"Ocp-Apim-Subscription-Key\": azure_ai_speech_key,\r\n",
-					"    }\r\n",
-					"\r\n",
-					"    async with httpx.AsyncClient() as client:\r\n",
-					"        response = await client.get(url=transcription_url, headers=headers)\r\n",
-					"    return response\r\n",
-					"\r\n",
-					"\r\n",
-					"async def get_batch_transcription_result(azure_ai_speech_region: str, azure_ai_speech_key: str, azure_ai_speech_transcription_id: str) -> Response:\r\n",
-					"    # Define url\r\n",
-					"    base_url = f\"https://{azure_ai_speech_region}.api.cognitive.microsoft.com\"\r\n",
-					"    transcription_url = f\"{base_url}/speechtotext/v3.1/transcriptions/{azure_ai_speech_transcription_id}/files\"\r\n",
-					"    \r\n",
-					"    # Define headers\r\n",
-					"    headers = {\r\n",
-					"        \"Ocp-Apim-Subscription-Key\": azure_ai_speech_key,\r\n",
-					"    }\r\n",
-					"\r\n",
-					"    async with httpx.AsyncClient() as client:\r\n",
-					"        response = await client.get(url=transcription_url, headers=headers)\r\n",
-					"    return response\r\n",
-					"\r\n",
-					"\r\n",
-					"async def azure_ai_speech_transcription(azure_ai_speech_region: str, azure_ai_speech_key: str, azure_ai_speech_content_urls: List[str], stt_filepath: str) -> List[Any]:\r\n",
-					"    # Start batch transcription\r\n",
-					"    response_start_batch_transcription = await start_batch_transcription(\r\n",
-					"        azure_ai_speech_region=azure_ai_speech_region,\r\n",
-					"        azure_ai_speech_key=azure_ai_speech_key,\r\n",
-					"        azure_ai_speech_content_urls=azure_ai_speech_content_urls,\r\n",
-					"    )\r\n",
-					"    logging.debug(response_start_batch_transcription.json())\r\n",
-					"    print(response_start_batch_transcription.json())\r\n",
-					"\r\n",
-					"    # Extract transcription id\r\n",
-					"    transaction_id_url = response_start_batch_transcription.json().get(\"self\")\r\n",
-					"    transcription_id = str.split(transaction_id_url, sep=\"/\")[-1]\r\n",
-					"    logging.debug(f\"Transcription ID: {transcription_id}\")\r\n",
-					"\r\n",
-					"    # Check porcessing status\r\n",
-					"    status = \"Unknown\"\r\n",
-					"    while status not in [\"Succeeded\", \"Failed\", None]:\r\n",
-					"        await asyncio.sleep(0.5)\r\n",
-					"        response_batch_transcription_status = await get_batch_transcription_status(\r\n",
-					"            azure_ai_speech_region=azure_ai_speech_region,\r\n",
-					"            azure_ai_speech_key=azure_ai_speech_key,\r\n",
-					"            azure_ai_speech_transcription_id=transcription_id,\r\n",
-					"        )\r\n",
-					"        if response_batch_transcription_status.status_code == 200:\r\n",
-					"            status = response_batch_transcription_status.json().get(\"status\", None)\r\n",
-					"        else:\r\n",
-					"            status = None\r\n",
-					"        print(f\"Processing Status: {status}\")\r\n",
-					"        logging.info(f\"Processing Status: {status}\")\r\n",
-					"    \r\n",
-					"    # Get batch transcription result\r\n",
-					"    response_batch_transcription_result = await get_batch_transcription_result(\r\n",
-					"        azure_ai_speech_region=azure_ai_speech_region,\r\n",
-					"        azure_ai_speech_key=azure_ai_speech_key,\r\n",
-					"        azure_ai_speech_transcription_id=transcription_id,\r\n",
-					"    )\r\n",
-					"    print(response_batch_transcription_result.json())\r\n",
-					"\r\n",
-					"    # Get transcription file list\r\n",
-					"    transcription_file_url_list = []\r\n",
-					"    for value in response_batch_transcription_result.json().get(\"values\", []):\r\n",
-					"        if value.get(\"kind\", \"\") == \"Transcription\":\r\n",
-					"            transcription_file_url = value.get(\"links\", {\"contentUrl\": \"\"}).get(\"contentUrl\", None)\r\n",
-					"            if transcription_file_url:\r\n",
-					"                transcription_file_url_list.append(transcription_file_url)\r\n",
-					"    \r\n",
-					"    # Get transcription result content\r\n",
-					"    transcription_content_list = []\r\n",
-					"    for transcription_file_url in transcription_file_url_list:\r\n",
-					"        async with httpx.AsyncClient() as client:\r\n",
-					"            response = await client.get(url=transcription_file_url)\r\n",
-					"        \r\n",
-					"        transcription_content_list.append(response.json())\r\n",
-					"    \r\n",
-					"    # Save transcription result\r\n",
-					"    os.makedirs(stt_filepath, exist_ok=True)\r\n",
-					"    stt_filepath = os.path.join(stt_filepath, \"stt.json\")\r\n",
-					"    with open(stt_filepath, mode=\"w\", encoding=\"utf8\") as f:\r\n",
-					"        json.dump(transcription_content_list, f, ensure_ascii=False)\r\n",
-					"\r\n",
-					"    return transcription_content_list\r\n",
-					""
-				],
-				"execution_count": 28
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"azure_ai_speech_key = mssparkutils.credentials.getConnectionStringOrCreds(azure_ai_speech_linked_service_name)\r\n",
-					"azure_ai_speech_content_url = f\"https://{curated_account_name}.blob.core.windows.net/{curated_container_name}/{pipeline_id}/{audio_filename}\"\r\n",
-					"stt_filepath = f\"{curated_mount_path_cluster}/{pipeline_id}\"\r\n",
-					"\r\n",
-					"result_stt = await azure_ai_speech_transcription(\r\n",
-					"    azure_ai_speech_region=azure_ai_speech_region,\r\n",
-					"    azure_ai_speech_key=azure_ai_speech_key,\r\n",
-					"    azure_ai_speech_content_urls=[\r\n",
-					"        azure_ai_speech_content_url\r\n",
-					"    ],\r\n",
-					"    stt_filepath=stt_filepath\r\n",
-					")\r\n",
-					""
-				],
-				"execution_count": 29
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"text_list = []\r\n",
-					"\r\n",
-					"for item in result_stt:\r\n",
-					"    stt_result = item[\"combinedRecognizedPhrases\"][0][\"display\"]\r\n",
-					"    text_list.append(stt_result)\r\n",
-					""
-				],
-				"execution_count": 40
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"#### Open AI Summarization"
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"from langchain_openai import AzureChatOpenAI\r\n",
-					"from langchain_core.messages import SystemMessage\r\n",
-					"from langchain_core.prompts import ChatPromptTemplate\r\n",
-					"from langchain_core.output_parsers import JsonOutputParser\r\n",
-					"\r\n",
-					"\r\n",
-					"def invoke_llm(\r\n",
-					"        azure_open_ai_key: str, \r\n",
-					"        azure_open_ai_base_url: str, \r\n",
-					"        azure_open_ai_api_version: str, \r\n",
-					"        azure_open_ai_deployment_name: str, \r\n",
-					"        news_content: str,\r\n",
-					"        news_show_details: str,\r\n",
-					"        oai_filepath: str) -> str:\r\n",
-					"    # Create the chat template\r\n",
-					"    system_message = \"\"\"\r\n",
-					"    You are a world class assistent for summarizing news content.\r\n",
-					"    You extract subsections from the provided news content and generate a title for each subsection.\r\n",
-					"    You must include the start and end of the original text for each subsection in the response. The text snippet describing the beginning and end should include 5 words.\r\n",
-					"    You add tags to each subsection. Samples for tags are: sports, weather, international news, national news, politics, technology, celebrity, other. You add additional tags based on the content of each subsection.\r\n",
-					"    \r\n",
-					"    You always respond with the following JSON structure:\r\n",
-					"    [\r\n",
-					"        {\r\n",
-					"            \"title\": \"<title of the first subsection>\",\r\n",
-					"            \"tags\": \"<tags of the first subsection>\",\r\n",
-					"            \"start\": \"<start of the text of the first subsection from the original text>\",\r\n",
-					"            \"end\": \"<end of the text of the first subsection from the original text>\"\r\n",
-					"        },\r\n",
-					"        {\r\n",
-					"            \"title\": \"<title of the second subsection>\",\r\n",
-					"            \"tags\": \"<tags of the second subsection>\",\r\n",
-					"            \"start\": \"<start of the text of the second subsection from the original text>\",\r\n",
-					"            \"end\": \"<end of the text of the second subsection from the original text>\"\r\n",
-					"        },\r\n",
-					"        {\r\n",
-					"            \"title\": \"<title of the third subsection>\",\r\n",
-					"            \"tags\": \"<tags of the third subsection>\",\r\n",
-					"            \"start\": \"<start of the text of the third subsection from the original text>\",\r\n",
-					"            \"end\": \"<end of the text of the third subsection from the original text>\"\r\n",
-					"        }\r\n",
-					"    ]\r\n",
-					"    \"\"\"\r\n",
-					"    user_message = \"\"\"\r\n",
-					"    News Content: \"{news_content}\"\r\n",
-					"    ---\r\n",
-					"    Provide a summary for the provided news text. The text is about {news_show_details}\r\n",
-					"    \"\"\"\r\n",
-					"\r\n",
-					"    prompt = ChatPromptTemplate.from_messages([\r\n",
-					"        SystemMessage(content=system_message, type=\"system\"),\r\n",
-					"        # (\"system\", system_message),\r\n",
-					"        (\"user\", user_message)\r\n",
-					"    ])\r\n",
-					"    prompt.input_variables = [\"news_content\", \"news_show_details\"]\r\n",
-					"\r\n",
-					"    # Create the llm\r\n",
-					"    llm = AzureChatOpenAI(\r\n",
-					"        api_key=azure_open_ai_key,\r\n",
-					"        azure_endpoint=azure_open_ai_base_url,\r\n",
-					"        api_version=azure_open_ai_api_version,\r\n",
-					"        deployment_name=azure_open_ai_deployment_name,\r\n",
-					"    )\r\n",
-					"\r\n",
-					"    # Create the output parser\r\n",
-					"    output_parser = JsonOutputParser() # TODO: Define pydantic model\r\n",
-					"\r\n",
-					"    # Create chain\r\n",
-					"    chain = prompt | llm | output_parser\r\n",
-					"\r\n",
-					"    # invoke chain\r\n",
-					"    result = chain.invoke(\r\n",
-					"        {\r\n",
-					"            \"news_content\": news_content,\r\n",
-					"            \"news_show_details\": news_show_details\r\n",
-					"        }\r\n",
-					"    )\r\n",
-					"\r\n",
-					"    # Save transcription result\r\n",
-					"    os.makedirs(oai_filepath, exist_ok=True)\r\n",
-					"    oai_filepath = os.path.join(oai_filepath, \"aoai.json\")\r\n",
-					"    with open(oai_filepath, mode=\"w\", encoding=\"utf8\") as f:\r\n",
-					"        json.dump(result, f, ensure_ascii=False)\r\n",
-					"\r\n",
-					"    return result\r\n",
-					""
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"azure_open_ai_key = mssparkutils.credentials.getConnectionStringOrCreds(azure_open_ai_linked_service_name)\r\n",
-					"news_content = \" \".join(text_list)\r\n",
-					"oai_filepath = f\"{curated_mount_path_cluster}/{pipeline_id}\"\r\n",
-					"\r\n",
-					"result_llm = invoke_llm(\r\n",
-					"    azure_open_ai_key=azure_open_ai_key,\r\n",
-					"    azure_open_ai_base_url=azure_open_ai_base_url,\r\n",
-					"    azure_open_ai_api_version=azure_open_ai_api_version,\r\n",
-					"    azure_open_ai_deployment_name=azure_open_ai_deployment_name,\r\n",
-					"    azure_open_ai_model_name=azure_open_ai_model_name,\r\n",
-					"    news_content=news_content,\r\n",
-					"    news_show_details=news_show_details,\r\n",
-					"    oai_filepath=oai_filepath\r\n",
-					")"
-				]
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"#### Find timestamps in original result from STT for tagging"
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"import copy\r\n",
-					"\r\n",
-					"\r\n",
-					"def get_word_details(result_stt: Any) -> List[Any]:\r\n",
-					"    word_details = []\r\n",
-					"    recognized_phrases = result_stt.get(\"recognizedPhrases\", [])\r\n",
-					"\r\n",
-					"    for recognized_phrase in recognized_phrases:\r\n",
-					"        recognized_phrase_best = recognized_phrase.get(\"nBest\", [])[0]\r\n",
-					"        recognized_phrase_best_display_words = recognized_phrase_best.get(\"displayWords\", [])\r\n",
-					"\r\n",
-					"        # Append word details\r\n",
-					"        word_details.extend(recognized_phrase_best_display_words)\r\n",
-					"    \r\n",
-					"    return word_details\r\n",
-					"\r\n",
-					"def get_timestamps(result_stt: Any, result_llm: Any, timestamps_filepath: str) -> Any:\r\n",
-					"    word_details = get_word_details(\r\n",
-					"        result_stt=result_stt\r\n",
-					"    )\r\n",
-					"\r\n",
-					"    # Configure indexes\r\n",
-					"    result_llm_index = 0\r\n",
-					"    result_llm_item = \"start\"\r\n",
-					"\r\n",
-					"    # Configure current item\r\n",
-					"    result_llm_current_words = str(result_llm[result_llm_index].get(result_llm_item, None)).split(sep=\" \")\r\n",
-					"\r\n",
-					"    # Configure result\r\n",
-					"    result = copy.deepcopy(result_llm)\r\n",
-					"\r\n",
-					"    for i, item in enumerate(word_details):\r\n",
-					"        word_detail_display_text = item.get(\"displayText\")\r\n",
-					"\r\n",
-					"        if word_detail_display_text == result_llm_current_words[0]:\r\n",
-					"            identical = [word == word_details[i+j].get(\"displayText\") for j, word in enumerate(result_llm_current_words)]\r\n",
-					"            all_identical = all(identical)\r\n",
-					"\r\n",
-					"            if all_identical:\r\n",
-					"                result[result_llm_index][f\"{result_llm_item}_offset\"] = word_details[i].get(\"offset\") if result_llm_item == \"start\" else word_details[i + len(result_llm_current_words) - 1].get(\"offset\")\r\n",
-					"                \r\n",
-					"                # print(word_detail_display_text)\r\n",
-					"                # print(result[result_llm_index][f\"{result_llm_item}_offset\"])\r\n",
-					"\r\n",
-					"                # Update index\r\n",
-					"                if result_llm_item == \"start\":\r\n",
-					"                    result_llm_item = \"end\"\r\n",
-					"                else:\r\n",
-					"                    result_llm_index += 1\r\n",
-					"                    result_llm_item = \"start\"\r\n",
-					"\r\n",
-					"                # Update current item\r\n",
-					"                if result_llm_index < len(result_llm):\r\n",
-					"                    result_llm_current_words = str(result_llm[result_llm_index].get(result_llm_item, None)).split(sep=\" \")\r\n",
-					"                    # print(result_llm_current_words)\r\n",
-					"                else:\r\n",
-					"                    break\r\n",
-					"    \r\n",
-					"    # Save transcription result\r\n",
-					"    os.makedirs(timestamps_filepath, exist_ok=True)\r\n",
-					"    timestamps_filepath = os.path.join(timestamps_filepath, \"timestamps.json\")\r\n",
-					"    with open(timestamps_filepath, mode=\"w\", encoding=\"utf8\") as f:\r\n",
-					"        json.dump(result, f, ensure_ascii=False)\r\n",
-					"\r\n",
-					"    return result\r\n",
-					""
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"timestamps_filepath = f\"{curated_mount_path_cluster}/{pipeline_id}\"\r\n",
-					"\r\n",
-					"result_timestamp = get_timestamps(\r\n",
-					"    result_stt=result_stt[0],\r\n",
-					"    result_llm=result_llm,\r\n",
-					"    timestamps_filepath=timestamps_filepath\r\n",
-					")\r\n",
-					""
-				],
-				"execution_count": 34
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"### Unmount Datalake"
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"# Unmount raw storage\r\n",
-					"unmount_datalake_gen2(\r\n",
-					"    mount_path=raw_mount_path,\r\n",
-					")\r\n",
-					"\r\n",
-					"# Unmount curated storage\r\n",
-					"unmount_datalake_gen2(\r\n",
-					"    mount_path=curated_mount_path,\r\n",
-					")\r\n",
-					""
-				],
-				"execution_count": 85
-			}
-		]
-	}
+  "name": "ProcessNewsVideo",
+  "properties": {
+    "description": "Process News Video using Azure AI Speech and Azure Open AI. ",
+    "nbformat": 4,
+    "nbformat_minor": 2,
+    "bigDataPool": {
+      "referenceName": "test",
+      "type": "BigDataPoolReference"
+    },
+    "sessionProperties": {
+      "driverMemory": "56g",
+      "driverCores": 8,
+      "executorMemory": "56g",
+      "executorCores": 8,
+      "numExecutors": 2,
+      "runAsWorkspaceSystemIdentity": false,
+      "conf": {
+        "spark.dynamicAllocation.enabled": "false",
+        "spark.dynamicAllocation.minExecutors": "2",
+        "spark.dynamicAllocation.maxExecutors": "2",
+        "spark.autotune.trackingId": "955c85d8-f27c-4a4e-8517-2694e3d7853c"
+      }
+    },
+    "metadata": {
+      "saveOutput": true,
+      "synapse_widget": {
+        "version": "0.1"
+      },
+      "enableDebugMode": false,
+      "kernelspec": {
+        "name": "synapse_pyspark",
+        "display_name": "Synapse PySpark"
+      },
+      "language_info": {
+        "name": "python"
+      },
+      "a365ComputeOptions": {
+        "id": "/subscriptions/8f171ff9-2b5b-4f0f-aed5-7fa360a1d094/resourceGroups/test-purview/providers/Microsoft.Synapse/workspaces/tstsynapse4/bigDataPools/test",
+        "name": "test",
+        "type": "Spark",
+        "endpoint": "https://tstsynapse4.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test",
+        "auth": {
+          "type": "AAD",
+          "authResource": "https://dev.azuresynapse.net",
+          "authHeader": null
+        },
+        "sparkVersion": "3.3",
+        "nodeCount": 10,
+        "cores": 8,
+        "memory": 56,
+        "extraHeader": null
+      },
+      "sessionKeepAliveTimeout": 30
+    },
+    "cells": [
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          },
+          "tags": [
+            "parameters"
+          ]
+        },
+        "source": [
+          "# General parameters\r\n",
+          "news_show_details=\"This is a german news show summarizing the events of the 15th February 2024.\"\r\n",
+          "\r\n",
+          "# Azure Speech \r\n",
+          "azure_ai_speech_linked_service_name = \"AzureAiSpeech\"\r\n",
+          "azure_ai_speech_region = \"swedencentral\"\r\n",
+          "\r\n",
+          "azure_open_ai_linked_service_name = \"AzureOpenAi\"\r\n",
+          "azure_open_ai_base_url=\"https://aoai-swedencentral-mabuss.openai.azure.com/\"\r\n",
+          "azure_open_ai_api_version=\"2023-05-15\"\r\n",
+          "azure_open_ai_deployment_name=\"gpt-4-32k\"\r\n",
+          "azure_open_ai_model_name=\"gpt-4-32k\"\r\n",
+          "\r\n",
+          "# Raw storage parameters\r\n",
+          "raw_linked_service_name = \"AzureDataLakeStorage\"\r\n",
+          "raw_mount_path = \"raw-videos\"\r\n",
+          "\r\n",
+          "raw_account_name = \"tstsynapsestg\"\r\n",
+          "raw_container_name = \"video\"\r\n",
+          "raw_file_path = \"movie.mp4\"\r\n",
+          "\r\n",
+          "# Curated storage parameters\r\n",
+          "curated_linked_service_name = \"AzureDataLakeStorage\"\r\n",
+          "curated_mount_path = \"curated-videos\"\r\n",
+          "\r\n",
+          "curated_account_name = \"tstsynapsestg\"\r\n",
+          "curated_container_name = \"curated\"\r\n",
+          "curated_file_path = \"movie.mp4\"\r\n",
+          ""
+        ],
+        "execution_count": 23
+      },
+      {
+        "cell_type": "markdown",
+        "metadata": {
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "### Get Pipeline ID"
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "import uuid\r\n",
+          "from notebookutils import mssparkutils\r\n",
+          "\r\n",
+          "pipeline_id = mssparkutils.runtime.context.get(\"pipelinejobid\")\r\n",
+          "if not pipeline_id:\r\n",
+          "    pipeline_id = f\"{uuid.uuid4()}\"\r\n",
+          ""
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "print(pipeline_id)"
+        ]
+      },
+      {
+        "cell_type": "markdown",
+        "metadata": {
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "### Mount Data Lake"
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "from notebookutils import mssparkutils\r\n",
+          "\r\n",
+          "\r\n",
+          "def mount_datalake_gen2(account_name: str, container_name: str, mount_path: str, linked_service_name: str) -> str:\r\n",
+          "    # Mount ADLS Gen2\r\n",
+          "    mssparkutils.fs.mount( \r\n",
+          "        f\"abfss://{container_name}@{account_name}.dfs.core.windows.net\", \r\n",
+          "        f\"/{mount_path}\",\r\n",
+          "        {\r\n",
+          "            \"LinkedService\": linked_service_name,\r\n",
+          "            \"fileCacheTimeout\": 120,\r\n",
+          "            \"timeout\": 120\r\n",
+          "        }\r\n",
+          "    )\r\n",
+          "\r\n",
+          "    # Compute mount point and return value\r\n",
+          "    mount_path_cluster = mssparkutils.fs.getMountPath(f\"/{mount_path}\")\r\n",
+          "    return mount_path_cluster\r\n",
+          "\r\n",
+          "\r\n",
+          "def unmount_datalake_gen2(mount_path: str) -> None:\r\n",
+          "    mssparkutils.fs.unmount(f\"/{mount_path}\")\r\n",
+          ""
+        ],
+        "execution_count": 24
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "# Mount raw storage\r\n",
+          "raw_mount_path_cluster = mount_datalake_gen2(\r\n",
+          "    account_name=raw_account_name,\r\n",
+          "    container_name=raw_container_name,\r\n",
+          "    mount_path=raw_mount_path,\r\n",
+          "    linked_service_name=raw_linked_service_name,\r\n",
+          ")\r\n",
+          "\r\n",
+          "# Mount curated storage\r\n",
+          "curated_mount_path_cluster = mount_datalake_gen2(\r\n",
+          "    account_name=curated_account_name,\r\n",
+          "    container_name=curated_container_name,\r\n",
+          "    mount_path=curated_mount_path,\r\n",
+          "    linked_service_name=curated_linked_service_name,\r\n",
+          ")\r\n",
+          ""
+        ],
+        "execution_count": 25
+      },
+      {
+        "cell_type": "markdown",
+        "metadata": {
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "### Extract Audio from Video"
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "import os\r\n",
+          "\r\n",
+          "from moviepy.editor import VideoFileClip, AudioFileClip\r\n",
+          "\r\n",
+          "\r\n",
+          "def extract_audio_from_video(video_filepath: str, audio_filepath: str, audio_filename: str = \"audio.wav\") -> AudioFileClip:\r\n",
+          "    # Load video file\r\n",
+          "    video = VideoFileClip(\r\n",
+          "        filename=video_filepath,\r\n",
+          "        has_mask=False,\r\n",
+          "        audio=True\r\n",
+          "    )\r\n",
+          "\r\n",
+          "    # Get audio file path\r\n",
+          "    os.makedirs(audio_filepath, exist_ok=True)\r\n",
+          "    audio_filepath = os.path.join(audio_filepath, audio_filename)\r\n",
+          "\r\n",
+          "    # Extract, write and return audio\r\n",
+          "    audio = video.audio\r\n",
+          "    audio.write_audiofile(audio_filepath) #, nbytes=2, codec=\"pcm_s16le\", bitrate=\"16k\", ffmpeg_params=[\"-ac\", \"1\"])\r\n",
+          "    return audio\r\n",
+          ""
+        ],
+        "execution_count": 26
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "video_filepath = f\"{raw_mount_path_cluster}/{raw_file_path}\"\r\n",
+          "audio_filepath = f\"{curated_mount_path_cluster}/{pipeline_id}\"\r\n",
+          "audio_filename = \"audio.wav\"\r\n",
+          "\r\n",
+          "audio = extract_audio_from_video(\r\n",
+          "    video_filepath=video_filepath,\r\n",
+          "    audio_filepath=audio_filepath,\r\n",
+          "    audio_filename=audio_filename\r\n",
+          ")"
+        ],
+        "execution_count": 27
+      },
+      {
+        "cell_type": "markdown",
+        "metadata": {
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "### Speech to text"
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "import asyncio\r\n",
+          "import httpx\r\n",
+          "import time\r\n",
+          "import uuid\r\n",
+          "import logging\r\n",
+          "import json\r\n",
+          "\r\n",
+          "from typing import List, Any\r\n",
+          "from httpx import Response\r\n",
+          "\r\n",
+          "\r\n",
+          "async def start_batch_transcription(azure_ai_speech_region: str, azure_ai_speech_key: str, azure_ai_speech_content_urls: List[str]) -> Response:\r\n",
+          "    # Define url\r\n",
+          "    base_url = f\"https://{azure_ai_speech_region}.api.cognitive.microsoft.com\"\r\n",
+          "    transcription_url = f\"{base_url}/speechtotext/v3.2-preview.1/transcriptions\"\r\n",
+          "    # model_url = f\"{base_url}/speechtotext/v3.2-preview.1/models/base/3765174c-b02f-40ba-bb4b-cd2332ec8a2e\"\r\n",
+          "\r\n",
+          "    # Define headers\r\n",
+          "    headers = {\r\n",
+          "        \"Content-Type\": \"application/json\",\r\n",
+          "        \"Ocp-Apim-Subscription-Key\": azure_ai_speech_key,\r\n",
+          "    }\r\n",
+          "\r\n",
+          "    # Define body\r\n",
+          "    body = {\r\n",
+          "        \"displayName\": f\"{uuid.uuid4()}\",\r\n",
+          "        \"description\": \"STT for files\",\r\n",
+          "        \"locale\": \"de-DE\",\r\n",
+          "        \"contentUrls\": azure_ai_speech_content_urls,\r\n",
+          "        # \"channels\": [0, 1],\r\n",
+          "        # \"contentContainerUrl\": \"https://tstsynapsestg.blob.core.windows.net/audio\", # azure_ai_speech_content_container_url,\r\n",
+          "        # \"model\": {\r\n",
+          "        #     \"self\": model_url\r\n",
+          "        # },\r\n",
+          "        \"properties\": {\r\n",
+          "            # \"languageIdentification\": {\r\n",
+          "            #     \"candidateLocales\": [\"en-US\", \"de-DE\", \"es-ES\"]\r\n",
+          "            # },\r\n",
+          "            # \"destinationContainerUrl\": azure_ai_speech_sink_container_url, # TODO: Specify container sink to store result on customer storage\r\n",
+          "            \"wordLevelTimestampsEnabled\": False,\r\n",
+          "            \"displayFormWordLevelTimestampsEnabled\": True,\r\n",
+          "            \"diarizationEnabled\": False,\r\n",
+          "            # \"diarization\": 1,\r\n",
+          "            \"punctuationMode\": \"DictatedAndAutomatic\",\r\n",
+          "            \"profanityFilterMode\": \"None\",\r\n",
+          "            \"timeToLive\": \"PT12H\"\r\n",
+          "        },\r\n",
+          "        \"customProperties\": {}\r\n",
+          "    }\r\n",
+          "\r\n",
+          "    async with httpx.AsyncClient() as client:\r\n",
+          "        response = await client.post(url=transcription_url, headers=headers, json=body)\r\n",
+          "    return response\r\n",
+          "\r\n",
+          "\r\n",
+          "async def get_batch_transcription_status(azure_ai_speech_region: str, azure_ai_speech_key: str, azure_ai_speech_transcription_id: str) -> Response:\r\n",
+          "    # Define url\r\n",
+          "    base_url = f\"https://{azure_ai_speech_region}.api.cognitive.microsoft.com\"\r\n",
+          "    transcription_url = f\"{base_url}/speechtotext/v3.1/transcriptions/{azure_ai_speech_transcription_id}\"\r\n",
+          "    \r\n",
+          "    # Define headers\r\n",
+          "    headers = {\r\n",
+          "        \"Ocp-Apim-Subscription-Key\": azure_ai_speech_key,\r\n",
+          "    }\r\n",
+          "\r\n",
+          "    async with httpx.AsyncClient() as client:\r\n",
+          "        response = await client.get(url=transcription_url, headers=headers)\r\n",
+          "    return response\r\n",
+          "\r\n",
+          "\r\n",
+          "async def get_batch_transcription_result(azure_ai_speech_region: str, azure_ai_speech_key: str, azure_ai_speech_transcription_id: str) -> Response:\r\n",
+          "    # Define url\r\n",
+          "    base_url = f\"https://{azure_ai_speech_region}.api.cognitive.microsoft.com\"\r\n",
+          "    transcription_url = f\"{base_url}/speechtotext/v3.1/transcriptions/{azure_ai_speech_transcription_id}/files\"\r\n",
+          "    \r\n",
+          "    # Define headers\r\n",
+          "    headers = {\r\n",
+          "        \"Ocp-Apim-Subscription-Key\": azure_ai_speech_key,\r\n",
+          "    }\r\n",
+          "\r\n",
+          "    async with httpx.AsyncClient() as client:\r\n",
+          "        response = await client.get(url=transcription_url, headers=headers)\r\n",
+          "    return response\r\n",
+          "\r\n",
+          "\r\n",
+          "async def azure_ai_speech_transcription(azure_ai_speech_region: str, azure_ai_speech_key: str, azure_ai_speech_content_urls: List[str], stt_filepath: str) -> List[Any]:\r\n",
+          "    # Start batch transcription\r\n",
+          "    response_start_batch_transcription = await start_batch_transcription(\r\n",
+          "        azure_ai_speech_region=azure_ai_speech_region,\r\n",
+          "        azure_ai_speech_key=azure_ai_speech_key,\r\n",
+          "        azure_ai_speech_content_urls=azure_ai_speech_content_urls,\r\n",
+          "    )\r\n",
+          "    logging.debug(response_start_batch_transcription.json())\r\n",
+          "    print(response_start_batch_transcription.json())\r\n",
+          "\r\n",
+          "    # Extract transcription id\r\n",
+          "    transaction_id_url = response_start_batch_transcription.json().get(\"self\")\r\n",
+          "    transcription_id = str.split(transaction_id_url, sep=\"/\")[-1]\r\n",
+          "    logging.debug(f\"Transcription ID: {transcription_id}\")\r\n",
+          "\r\n",
+          "    # Check porcessing status\r\n",
+          "    status = \"Unknown\"\r\n",
+          "    while status not in [\"Succeeded\", \"Failed\", None]:\r\n",
+          "        await asyncio.sleep(0.5)\r\n",
+          "        response_batch_transcription_status = await get_batch_transcription_status(\r\n",
+          "            azure_ai_speech_region=azure_ai_speech_region,\r\n",
+          "            azure_ai_speech_key=azure_ai_speech_key,\r\n",
+          "            azure_ai_speech_transcription_id=transcription_id,\r\n",
+          "        )\r\n",
+          "        if response_batch_transcription_status.status_code == 200:\r\n",
+          "            status = response_batch_transcription_status.json().get(\"status\", None)\r\n",
+          "        else:\r\n",
+          "            status = None\r\n",
+          "        print(f\"Processing Status: {status}\")\r\n",
+          "        logging.info(f\"Processing Status: {status}\")\r\n",
+          "    \r\n",
+          "    # Get batch transcription result\r\n",
+          "    response_batch_transcription_result = await get_batch_transcription_result(\r\n",
+          "        azure_ai_speech_region=azure_ai_speech_region,\r\n",
+          "        azure_ai_speech_key=azure_ai_speech_key,\r\n",
+          "        azure_ai_speech_transcription_id=transcription_id,\r\n",
+          "    )\r\n",
+          "    print(response_batch_transcription_result.json())\r\n",
+          "\r\n",
+          "    # Get transcription file list\r\n",
+          "    transcription_file_url_list = []\r\n",
+          "    for value in response_batch_transcription_result.json().get(\"values\", []):\r\n",
+          "        if value.get(\"kind\", \"\") == \"Transcription\":\r\n",
+          "            transcription_file_url = value.get(\"links\", {\"contentUrl\": \"\"}).get(\"contentUrl\", None)\r\n",
+          "            if transcription_file_url:\r\n",
+          "                transcription_file_url_list.append(transcription_file_url)\r\n",
+          "    \r\n",
+          "    # Get transcription result content\r\n",
+          "    transcription_content_list = []\r\n",
+          "    for transcription_file_url in transcription_file_url_list:\r\n",
+          "        async with httpx.AsyncClient() as client:\r\n",
+          "            response = await client.get(url=transcription_file_url)\r\n",
+          "        \r\n",
+          "        transcription_content_list.append(response.json())\r\n",
+          "    \r\n",
+          "    # Save transcription result\r\n",
+          "    os.makedirs(stt_filepath, exist_ok=True)\r\n",
+          "    stt_filepath = os.path.join(stt_filepath, \"stt.json\")\r\n",
+          "    with open(stt_filepath, mode=\"w\", encoding=\"utf8\") as f:\r\n",
+          "        json.dump(transcription_content_list, f, ensure_ascii=False)\r\n",
+          "\r\n",
+          "    return transcription_content_list\r\n",
+          ""
+        ],
+        "execution_count": 28
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "azure_ai_speech_key = mssparkutils.credentials.getConnectionStringOrCreds(azure_ai_speech_linked_service_name)\r\n",
+          "azure_ai_speech_content_url = f\"https://{curated_account_name}.blob.core.windows.net/{curated_container_name}/{pipeline_id}/{audio_filename}\"\r\n",
+          "stt_filepath = f\"{curated_mount_path_cluster}/{pipeline_id}\"\r\n",
+          "\r\n",
+          "result_stt = await azure_ai_speech_transcription(\r\n",
+          "    azure_ai_speech_region=azure_ai_speech_region,\r\n",
+          "    azure_ai_speech_key=azure_ai_speech_key,\r\n",
+          "    azure_ai_speech_content_urls=[\r\n",
+          "        azure_ai_speech_content_url\r\n",
+          "    ],\r\n",
+          "    stt_filepath=stt_filepath\r\n",
+          ")\r\n",
+          ""
+        ],
+        "execution_count": 29
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "text_list = []\r\n",
+          "\r\n",
+          "for item in result_stt:\r\n",
+          "    stt_result = item[\"combinedRecognizedPhrases\"][0][\"display\"]\r\n",
+          "    text_list.append(stt_result)\r\n",
+          ""
+        ],
+        "execution_count": 40
+      },
+      {
+        "cell_type": "markdown",
+        "metadata": {
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "#### Open AI Summarization"
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "from langchain_openai import AzureChatOpenAI\r\n",
+          "from langchain_core.messages import SystemMessage\r\n",
+          "from langchain_core.prompts import ChatPromptTemplate\r\n",
+          "from langchain_core.output_parsers import JsonOutputParser\r\n",
+          "\r\n",
+          "\r\n",
+          "def invoke_llm(\r\n",
+          "        azure_open_ai_key: str, \r\n",
+          "        azure_open_ai_base_url: str, \r\n",
+          "        azure_open_ai_api_version: str, \r\n",
+          "        azure_open_ai_deployment_name: str, \r\n",
+          "        news_content: str,\r\n",
+          "        news_show_details: str,\r\n",
+          "        oai_filepath: str) -> str:\r\n",
+          "    # Create the chat template\r\n",
+          "    system_message = \"\"\"\r\n",
+          "    You are a world class assistent for summarizing news content.\r\n",
+          "    You extract subsections from the provided news content and generate a title for each subsection.\r\n",
+          "    You must include the start and end of the original text for each subsection in the response. The text snippet describing the beginning and end should include 5 words.\r\n",
+          "    You add tags to each subsection. Samples for tags are: sports, weather, international news, national news, politics, technology, celebrity, other. You add additional tags based on the content of each subsection.\r\n",
+          "    \r\n",
+          "    You always respond with the following JSON structure:\r\n",
+          "    [\r\n",
+          "        {\r\n",
+          "            \"title\": \"<title of the first subsection>\",\r\n",
+          "            \"tags\": \"<tags of the first subsection>\",\r\n",
+          "            \"start\": \"<start of the text of the first subsection from the original text>\",\r\n",
+          "            \"end\": \"<end of the text of the first subsection from the original text>\"\r\n",
+          "        },\r\n",
+          "        {\r\n",
+          "            \"title\": \"<title of the second subsection>\",\r\n",
+          "            \"tags\": \"<tags of the second subsection>\",\r\n",
+          "            \"start\": \"<start of the text of the second subsection from the original text>\",\r\n",
+          "            \"end\": \"<end of the text of the second subsection from the original text>\"\r\n",
+          "        },\r\n",
+          "        {\r\n",
+          "            \"title\": \"<title of the third subsection>\",\r\n",
+          "            \"tags\": \"<tags of the third subsection>\",\r\n",
+          "            \"start\": \"<start of the text of the third subsection from the original text>\",\r\n",
+          "            \"end\": \"<end of the text of the third subsection from the original text>\"\r\n",
+          "        }\r\n",
+          "    ]\r\n",
+          "    \"\"\"\r\n",
+          "    user_message = \"\"\"\r\n",
+          "    News Content: \"{news_content}\"\r\n",
+          "    ---\r\n",
+          "    Provide a summary for the provided news text. The text is about {news_show_details}\r\n",
+          "    \"\"\"\r\n",
+          "\r\n",
+          "    prompt = ChatPromptTemplate.from_messages([\r\n",
+          "        SystemMessage(content=system_message, type=\"system\"),\r\n",
+          "        # (\"system\", system_message),\r\n",
+          "        (\"user\", user_message)\r\n",
+          "    ])\r\n",
+          "    prompt.input_variables = [\"news_content\", \"news_show_details\"]\r\n",
+          "\r\n",
+          "    # Create the llm\r\n",
+          "    llm = AzureChatOpenAI(\r\n",
+          "        api_key=azure_open_ai_key,\r\n",
+          "        azure_endpoint=azure_open_ai_base_url,\r\n",
+          "        api_version=azure_open_ai_api_version,\r\n",
+          "        deployment_name=azure_open_ai_deployment_name,\r\n",
+          "    )\r\n",
+          "\r\n",
+          "    # Create the output parser\r\n",
+          "    output_parser = JsonOutputParser() # TODO: Define pydantic model\r\n",
+          "\r\n",
+          "    # Create chain\r\n",
+          "    chain = prompt | llm | output_parser\r\n",
+          "\r\n",
+          "    # invoke chain\r\n",
+          "    result = chain.invoke(\r\n",
+          "        {\r\n",
+          "            \"news_content\": news_content,\r\n",
+          "            \"news_show_details\": news_show_details\r\n",
+          "        }\r\n",
+          "    )\r\n",
+          "\r\n",
+          "    # Save transcription result\r\n",
+          "    os.makedirs(oai_filepath, exist_ok=True)\r\n",
+          "    oai_filepath = os.path.join(oai_filepath, \"aoai.json\")\r\n",
+          "    with open(oai_filepath, mode=\"w\", encoding=\"utf8\") as f:\r\n",
+          "        json.dump(result, f, ensure_ascii=False)\r\n",
+          "\r\n",
+          "    return result\r\n",
+          ""
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "azure_open_ai_key = mssparkutils.credentials.getConnectionStringOrCreds(azure_open_ai_linked_service_name)\r\n",
+          "news_content = \" \".join(text_list)\r\n",
+          "oai_filepath = f\"{curated_mount_path_cluster}/{pipeline_id}\"\r\n",
+          "\r\n",
+          "result_llm = invoke_llm(\r\n",
+          "    azure_open_ai_key=azure_open_ai_key,\r\n",
+          "    azure_open_ai_base_url=azure_open_ai_base_url,\r\n",
+          "    azure_open_ai_api_version=azure_open_ai_api_version,\r\n",
+          "    azure_open_ai_deployment_name=azure_open_ai_deployment_name,\r\n",
+          "    azure_open_ai_model_name=azure_open_ai_model_name,\r\n",
+          "    news_content=news_content,\r\n",
+          "    news_show_details=news_show_details,\r\n",
+          "    oai_filepath=oai_filepath\r\n",
+          ")"
+        ]
+      },
+      {
+        "cell_type": "markdown",
+        "metadata": {
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "#### Find timestamps in original result from STT for tagging"
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "import copy\r\n",
+          "\r\n",
+          "\r\n",
+          "def get_word_details(result_stt: Any) -> List[Any]:\r\n",
+          "    word_details = []\r\n",
+          "    recognized_phrases = result_stt.get(\"recognizedPhrases\", [])\r\n",
+          "\r\n",
+          "    for recognized_phrase in recognized_phrases:\r\n",
+          "        recognized_phrase_best = recognized_phrase.get(\"nBest\", [])[0]\r\n",
+          "        recognized_phrase_best_display_words = recognized_phrase_best.get(\"displayWords\", [])\r\n",
+          "\r\n",
+          "        # Append word details\r\n",
+          "        word_details.extend(recognized_phrase_best_display_words)\r\n",
+          "    \r\n",
+          "    return word_details\r\n",
+          "\r\n",
+          "def get_timestamps(result_stt: Any, result_llm: Any, timestamps_filepath: str) -> Any:\r\n",
+          "    word_details = get_word_details(\r\n",
+          "        result_stt=result_stt\r\n",
+          "    )\r\n",
+          "\r\n",
+          "    # Configure indexes\r\n",
+          "    result_llm_index = 0\r\n",
+          "    result_llm_item = \"start\"\r\n",
+          "\r\n",
+          "    # Configure current item\r\n",
+          "    result_llm_current_words = str(result_llm[result_llm_index].get(result_llm_item, None)).split(sep=\" \")\r\n",
+          "\r\n",
+          "    # Configure result\r\n",
+          "    result = copy.deepcopy(result_llm)\r\n",
+          "\r\n",
+          "    for i, item in enumerate(word_details):\r\n",
+          "        word_detail_display_text = item.get(\"displayText\")\r\n",
+          "\r\n",
+          "        if word_detail_display_text == result_llm_current_words[0]:\r\n",
+          "            identical = [word == word_details[i+j].get(\"displayText\") for j, word in enumerate(result_llm_current_words)]\r\n",
+          "            all_identical = all(identical)\r\n",
+          "\r\n",
+          "            if all_identical:\r\n",
+          "                result[result_llm_index][f\"{result_llm_item}_offset\"] = word_details[i].get(\"offset\") if result_llm_item == \"start\" else word_details[i + len(result_llm_current_words) - 1].get(\"offset\")\r\n",
+          "                \r\n",
+          "                # print(word_detail_display_text)\r\n",
+          "                # print(result[result_llm_index][f\"{result_llm_item}_offset\"])\r\n",
+          "\r\n",
+          "                # Update index\r\n",
+          "                if result_llm_item == \"start\":\r\n",
+          "                    result_llm_item = \"end\"\r\n",
+          "                else:\r\n",
+          "                    result_llm_index += 1\r\n",
+          "                    result_llm_item = \"start\"\r\n",
+          "\r\n",
+          "                # Update current item\r\n",
+          "                if result_llm_index < len(result_llm):\r\n",
+          "                    result_llm_current_words = str(result_llm[result_llm_index].get(result_llm_item, None)).split(sep=\" \")\r\n",
+          "                    # print(result_llm_current_words)\r\n",
+          "                else:\r\n",
+          "                    break\r\n",
+          "    \r\n",
+          "    # Save transcription result\r\n",
+          "    os.makedirs(timestamps_filepath, exist_ok=True)\r\n",
+          "    timestamps_filepath = os.path.join(timestamps_filepath, \"timestamps.json\")\r\n",
+          "    with open(timestamps_filepath, mode=\"w\", encoding=\"utf8\") as f:\r\n",
+          "        json.dump(result, f, ensure_ascii=False)\r\n",
+          "\r\n",
+          "    return result\r\n",
+          ""
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "timestamps_filepath = f\"{curated_mount_path_cluster}/{pipeline_id}\"\r\n",
+          "\r\n",
+          "result_timestamp = get_timestamps(\r\n",
+          "    result_stt=result_stt[0],\r\n",
+          "    result_llm=result_llm,\r\n",
+          "    timestamps_filepath=timestamps_filepath\r\n",
+          ")\r\n",
+          ""
+        ],
+        "execution_count": 34
+      },
+      {
+        "cell_type": "markdown",
+        "metadata": {
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "### Unmount Datalake"
+        ]
+      },
+      {
+        "cell_type": "code",
+        "metadata": {
+          "jupyter": {
+            "source_hidden": false,
+            "outputs_hidden": false
+          },
+          "nteract": {
+            "transient": {
+              "deleting": false
+            }
+          }
+        },
+        "source": [
+          "# Unmount raw storage\r\n",
+          "unmount_datalake_gen2(\r\n",
+          "    mount_path=raw_mount_path,\r\n",
+          ")\r\n",
+          "\r\n",
+          "# Unmount curated storage\r\n",
+          "unmount_datalake_gen2(\r\n",
+          "    mount_path=curated_mount_path,\r\n",
+          ")\r\n",
+          ""
+        ],
+        "execution_count": 85
+      }
+    ]
+  }
 }

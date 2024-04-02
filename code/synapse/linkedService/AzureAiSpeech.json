@@ -1,28 +1,28 @@
 {
-	"name": "AzureAiSpeech",
-	"type": "Microsoft.Synapse/workspaces/linkedservices",
-	"properties": {
-		"annotations": [],
-		"type": "CognitiveService",
-		"typeProperties": {
-			"subscriptionId": "8f171ff9-2b5b-4f0f-aed5-7fa360a1d094",
-			"resourceGroup": "fdfrgrf_group",
-			"csName": "speech-mabuss",
-			"csKind": "SpeechServices",
-			"csLocation": "swedencentral",
-			"endPoint": "https://swedencentral.api.cognitive.microsoft.com/",
-			"csKey": {
-				"type": "AzureKeyVaultSecret",
-				"store": {
-					"referenceName": "AzureKeyVault",
-					"type": "LinkedServiceReference"
-				},
-				"secretName": "speech-key"
-			}
-		},
-		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
-			"type": "IntegrationRuntimeReference"
-		}
-	}
+  "name": "AzureAiSpeech",
+  "type": "Microsoft.Synapse/workspaces/linkedservices",
+  "properties": {
+    "annotations": [],
+    "type": "CognitiveService",
+    "typeProperties": {
+      "subscriptionId": "8f171ff9-2b5b-4f0f-aed5-7fa360a1d094",
+      "resourceGroup": "fdfrgrf_group",
+      "csName": "speech-mabuss",
+      "csKind": "SpeechServices",
+      "csLocation": "swedencentral",
+      "endPoint": "https://swedencentral.api.cognitive.microsoft.com/",
+      "csKey": {
+        "type": "AzureKeyVaultSecret",
+        "store": {
+          "referenceName": "AzureKeyVault",
+          "type": "LinkedServiceReference"
+        },
+        "secretName": "speech-key"
+      }
+    },
+    "connectVia": {
+      "referenceName": "AutoResolveIntegrationRuntime",
+      "type": "IntegrationRuntimeReference"
+    }
+  }
 }

@@ -1,331 +1,331 @@
 {
-	"name": "TestRawToCuratedPipeline",
-	"properties": {
-		"activities": [
-			{
-				"name": "ExecuteRawToCuratedPipeline",
-				"description": "Execute Raw to Curated Pipeline",
-				"type": "ExecutePipeline",
-				"dependsOn": [],
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "RawToCuratedPipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"newsShowDetails": {
-							"value": "@pipeline().parameters.newsShowDetails",
-							"type": "Expression"
-						},
-						"rawAccountName": {
-							"value": "@pipeline().parameters.rawAccountName",
-							"type": "Expression"
-						},
-						"rawContainerName": {
-							"value": "@pipeline().parameters.rawContainerName",
-							"type": "Expression"
-						},
-						"rawDirectoryName": {
-							"value": "@pipeline().parameters.rawDirectoryName",
-							"type": "Expression"
-						},
-						"curatedAccountName": {
-							"value": "@pipeline().parameters.curatedAccountName",
-							"type": "Expression"
-						},
-						"curatedContainerName": {
-							"value": "@pipeline().parameters.curatedContainerName",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableCuratedAdlsFilePath",
-				"description": "Get Pipeline Variable \"curatedAdlsFilePath\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteRawToCuratedPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "curatedAdlsFilePath",
-					"value": {
-						"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedAdlsFilePath)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableCuratedAccountName",
-				"description": "Get Pipeline Variable \"curatedAccountName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteRawToCuratedPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "curatedAccountName",
-					"value": {
-						"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedAccountName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableCuratedContainerName",
-				"description": "Get Pipeline Variable \"curatedContainerName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteRawToCuratedPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "curatedContainerName",
-					"value": {
-						"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedContainerName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableCuratedDirectoryName",
-				"description": "Get Pipeline Variable \"curatedDirectoryName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteRawToCuratedPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "curatedDirectoryName",
-					"value": {
-						"value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedDirectoryName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "IfCuratedAdlsFilePath",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableCuratedAdlsFilePath",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('curatedAdlsFilePath'), replace(pipeline().parameters.expectedCuratedAdlsFilePath, '<pipeline-id>', activity('ExecuteRawToCuratedPipeline').output.pipelineRunId))",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailRawAdlsFilePath",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "IfCuratedAccountName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableCuratedAccountName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('curatedAccountName'), pipeline().parameters.expectedCuratedAccountName)",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailRawAccountName",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "IfCuratedContainerName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableCuratedContainerName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('curatedContainerName'), pipeline().parameters.expectedCuratedContainerName)",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailRawContainerName",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "IfCuratedDirectoryName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableCuratedDirectoryName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('curatedDirectoryName'), replace(pipeline().parameters.expectedCuratedDirectoryName, '<pipeline-id>', activity('ExecuteRawToCuratedPipeline').output.pipelineRunId))",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailRawDirectoryName",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			}
-		],
-		"parameters": {
-			"newsShowDetails": {
-				"type": "string",
-				"defaultValue": "This is a news show."
-			},
-			"rawAccountName": {
-				"type": "string",
-				"defaultValue": "tstsynapsestg"
-			},
-			"rawContainerName": {
-				"type": "string",
-				"defaultValue": "raw"
-			},
-			"rawDirectoryName": {
-				"type": "string",
-				"defaultValue": "01004489-f156-47b3-88e3-661b3ddbd220/movie.mp4"
-			},
-			"curatedAccountName": {
-				"type": "string",
-				"defaultValue": "tstsynapsestg"
-			},
-			"curatedContainerName": {
-				"type": "string",
-				"defaultValue": "curated"
-			},
-			"expectedCuratedAdlsFilePath": {
-				"type": "string",
-				"defaultValue": "abfss://curated@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/audio.wav"
-			},
-			"expectedCuratedAccountName": {
-				"type": "string",
-				"defaultValue": "tstsynapsestg"
-			},
-			"expectedCuratedContainerName": {
-				"type": "string",
-				"defaultValue": "curated"
-			},
-			"expectedCuratedDirectoryName": {
-				"type": "string",
-				"defaultValue": "<pipeline-id>/audio.wav"
-			}
-		},
-		"variables": {
-			"curatedAdlsFilePath": {
-				"type": "String"
-			},
-			"curatedAccountName": {
-				"type": "String"
-			},
-			"curatedContainerName": {
-				"type": "String"
-			},
-			"curatedDirectoryName": {
-				"type": "String"
-			}
-		},
-		"folder": {
-			"name": "Tests"
-		},
-		"annotations": []
-	}
+  "name": "TestRawToCuratedPipeline",
+  "properties": {
+    "activities": [
+      {
+        "name": "ExecuteRawToCuratedPipeline",
+        "description": "Execute Raw to Curated Pipeline",
+        "type": "ExecutePipeline",
+        "dependsOn": [],
+        "userProperties": [],
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "RawToCuratedPipeline",
+            "type": "PipelineReference"
+          },
+          "waitOnCompletion": true,
+          "parameters": {
+            "newsShowDetails": {
+              "value": "@pipeline().parameters.newsShowDetails",
+              "type": "Expression"
+            },
+            "rawAccountName": {
+              "value": "@pipeline().parameters.rawAccountName",
+              "type": "Expression"
+            },
+            "rawContainerName": {
+              "value": "@pipeline().parameters.rawContainerName",
+              "type": "Expression"
+            },
+            "rawDirectoryName": {
+              "value": "@pipeline().parameters.rawDirectoryName",
+              "type": "Expression"
+            },
+            "curatedAccountName": {
+              "value": "@pipeline().parameters.curatedAccountName",
+              "type": "Expression"
+            },
+            "curatedContainerName": {
+              "value": "@pipeline().parameters.curatedContainerName",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableCuratedAdlsFilePath",
+        "description": "Get Pipeline Variable \"curatedAdlsFilePath\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteRawToCuratedPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "curatedAdlsFilePath",
+          "value": {
+            "value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedAdlsFilePath)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableCuratedAccountName",
+        "description": "Get Pipeline Variable \"curatedAccountName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteRawToCuratedPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "curatedAccountName",
+          "value": {
+            "value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedAccountName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableCuratedContainerName",
+        "description": "Get Pipeline Variable \"curatedContainerName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteRawToCuratedPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "curatedContainerName",
+          "value": {
+            "value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedContainerName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableCuratedDirectoryName",
+        "description": "Get Pipeline Variable \"curatedDirectoryName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteRawToCuratedPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "curatedDirectoryName",
+          "value": {
+            "value": "@string(activity('ExecuteRawToCuratedPipeline').output.pipelineReturnValue.curatedDirectoryName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "IfCuratedAdlsFilePath",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableCuratedAdlsFilePath",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('curatedAdlsFilePath'), replace(pipeline().parameters.expectedCuratedAdlsFilePath, '<pipeline-id>', activity('ExecuteRawToCuratedPipeline').output.pipelineRunId))",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailRawAdlsFilePath",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "IfCuratedAccountName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableCuratedAccountName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('curatedAccountName'), pipeline().parameters.expectedCuratedAccountName)",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailRawAccountName",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "IfCuratedContainerName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableCuratedContainerName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('curatedContainerName'), pipeline().parameters.expectedCuratedContainerName)",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailRawContainerName",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "IfCuratedDirectoryName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableCuratedDirectoryName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('curatedDirectoryName'), replace(pipeline().parameters.expectedCuratedDirectoryName, '<pipeline-id>', activity('ExecuteRawToCuratedPipeline').output.pipelineRunId))",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailRawDirectoryName",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {
+      "newsShowDetails": {
+        "type": "string",
+        "defaultValue": "This is a news show."
+      },
+      "rawAccountName": {
+        "type": "string",
+        "defaultValue": "tstsynapsestg"
+      },
+      "rawContainerName": {
+        "type": "string",
+        "defaultValue": "raw"
+      },
+      "rawDirectoryName": {
+        "type": "string",
+        "defaultValue": "01004489-f156-47b3-88e3-661b3ddbd220/movie.mp4"
+      },
+      "curatedAccountName": {
+        "type": "string",
+        "defaultValue": "tstsynapsestg"
+      },
+      "curatedContainerName": {
+        "type": "string",
+        "defaultValue": "curated"
+      },
+      "expectedCuratedAdlsFilePath": {
+        "type": "string",
+        "defaultValue": "abfss://curated@tstsynapsestg.dfs.core.windows.net/<pipeline-id>/audio.wav"
+      },
+      "expectedCuratedAccountName": {
+        "type": "string",
+        "defaultValue": "tstsynapsestg"
+      },
+      "expectedCuratedContainerName": {
+        "type": "string",
+        "defaultValue": "curated"
+      },
+      "expectedCuratedDirectoryName": {
+        "type": "string",
+        "defaultValue": "<pipeline-id>/audio.wav"
+      }
+    },
+    "variables": {
+      "curatedAdlsFilePath": {
+        "type": "String"
+      },
+      "curatedAccountName": {
+        "type": "String"
+      },
+      "curatedContainerName": {
+        "type": "String"
+      },
+      "curatedDirectoryName": {
+        "type": "String"
+      }
+    },
+    "folder": {
+      "name": "Tests"
+    },
+    "annotations": []
+  }
 }

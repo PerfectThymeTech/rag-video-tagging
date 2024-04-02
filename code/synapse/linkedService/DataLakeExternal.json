@@ -1,16 +1,16 @@
 {
-	"name": "DataLakeExternal",
-	"type": "Microsoft.Synapse/workspaces/linkedservices",
-	"properties": {
-		"description": "Data Lake to receive data.",
-		"annotations": [],
-		"type": "AzureBlobFS",
-		"typeProperties": {
-			"url": "https://tstsynapsestg.dfs.core.windows.net/"
-		},
-		"connectVia": {
-			"referenceName": "AzureIntegrationRuntime001",
-			"type": "IntegrationRuntimeReference"
-		}
-	}
+  "name": "DataLakeExternal",
+  "type": "Microsoft.Synapse/workspaces/linkedservices",
+  "properties": {
+    "description": "Data Lake to receive data.",
+    "annotations": [],
+    "type": "AzureBlobFS",
+    "typeProperties": {
+      "url": "https://tstsynapsestg.dfs.core.windows.net/"
+    },
+    "connectVia": {
+      "referenceName": "AzureIntegrationRuntime001",
+      "type": "IntegrationRuntimeReference"
+    }
+  }
 }

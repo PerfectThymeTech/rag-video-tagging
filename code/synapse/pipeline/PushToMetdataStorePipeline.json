@@ -1,21 +1,21 @@
 {
-	"name": "PushToMetdataStorePipeline",
-	"properties": {
-		"description": "Pipeline to ush results to metadata store",
-		"activities": [
-			{
-				"name": "DummyWait",
-				"type": "Wait",
-				"dependsOn": [],
-				"userProperties": [],
-				"typeProperties": {
-					"waitTimeInSeconds": 1
-				}
-			}
-		],
-		"folder": {
-			"name": "ChildPipelines"
-		},
-		"annotations": []
-	}
+  "name": "PushToMetdataStorePipeline",
+  "properties": {
+    "description": "Pipeline to ush results to metadata store",
+    "activities": [
+      {
+        "name": "DummyWait",
+        "type": "Wait",
+        "dependsOn": [],
+        "userProperties": [],
+        "typeProperties": {
+          "waitTimeInSeconds": 1
+        }
+      }
+    ],
+    "folder": {
+      "name": "ChildPipelines"
+    },
+    "annotations": []
+  }
 }

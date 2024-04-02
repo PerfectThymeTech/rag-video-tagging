@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     FUNCTION_DEFAULT_ORCHESTRATOR_NAME: str = "video_extraction_orchestrator"
     # AZURE_AI_SPEECH_REGION: str = Field(default="", alias="AZURE_AI_SPEECH_REGION")
     # AZURE_AI_SPEECH_KEY: str = Field(default="", alias="AZURE_AI_SPEECH_KEY")
-    HOME_DIRECTORY : str = Field(default="", alias="HOME")
+    HOME_DIRECTORY: str = Field(default="", alias="HOME")
 
 
 settings = Settings()

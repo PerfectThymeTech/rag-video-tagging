@@ -1,283 +1,283 @@
 {
-	"name": "RawToCuratedPipeline",
-	"properties": {
-		"description": "Pipeline for moving data from raw to the curated layer.",
-		"activities": [
-			{
-				"name": "ProcessNewsVideo",
-				"description": "Process Video file stored in raw layer.",
-				"type": "SynapseNotebook",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"notebook": {
-						"referenceName": "ProcessNewsVideo",
-						"type": "NotebookReference"
-					},
-					"parameters": {
-						"news_show_details": {
-							"value": {
-								"value": "@pipeline().parameters.newsShowDetails",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"azure_ai_speech_linked_service_name": {
-							"value": {
-								"value": "@variables('azureAiSpeechLinkedServiceName')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"azure_ai_speech_region": {
-							"value": {
-								"value": "@variables('azureAiSpeechRegion')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"azure_open_ai_linked_service_name": {
-							"value": {
-								"value": "@variables('azureOpenAiLinkedServiceName')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"azure_open_ai_base_url": {
-							"value": {
-								"value": "@variables('azureOpenAiBaseUrl')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"azure_open_ai_api_version": {
-							"value": {
-								"value": "@variables('azureOpenAiApiVersion')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"azure_open_ai_deployment_name": {
-							"value": {
-								"value": "@variables('azureOpenAiDeploymentName')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"azure_open_ai_model_name": {
-							"value": {
-								"value": "@variables('azureOpenAiModelName')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"source_linked_service_name": {
-							"value": {
-								"value": "@variables('rawLinkedServiceName')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"source_mount_path": {
-							"value": {
-								"value": "@variables('rawMountPath')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"source_account_name": {
-							"value": {
-								"value": "@pipeline().parameters.rawAccountName",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"source_container_name": {
-							"value": {
-								"value": "@pipeline().parameters.rawContainerName",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"source_file_path": {
-							"value": {
-								"value": "@pipeline().parameters.rawDirectoryName",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"sink_linked_service_name": {
-							"value": {
-								"value": "@variables('curatedLinkedServiceName')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"sink_mount_path": {
-							"value": {
-								"value": "@variables('curatedMountPath')",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"sink_account_name": {
-							"value": {
-								"value": "@pipeline().parameters.curatedAccountName",
-								"type": "Expression"
-							},
-							"type": "string"
-						},
-						"sink_container_name": {
-							"value": {
-								"value": "@pipeline().parameters.curatedContainerName",
-								"type": "Expression"
-							},
-							"type": "string"
-						}
-					},
-					"snapshot": true,
-					"sparkPool": {
-						"referenceName": "test",
-						"type": "BigDataPoolReference"
-					},
-					"executorSize": "Medium",
-					"conf": {
-						"spark.dynamicAllocation.enabled": true
-					},
-					"driverSize": "Medium"
-				}
-			},
-			{
-				"name": "ReturnVariables",
-				"description": "Return variables to main pipeline.",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ProcessNewsVideo",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "pipelineReturnValue",
-					"value": [
-						{
-							"key": "curatedAdlsFilePath",
-							"value": {
-								"type": "Expression",
-								"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_adls_path"
-							}
-						},
-						{
-							"key": "curatedAccountName",
-							"value": {
-								"type": "Expression",
-								"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_account_name"
-							}
-						},
-						{
-							"key": "curatedContainerName",
-							"value": {
-								"type": "Expression",
-								"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_container_name"
-							}
-						},
-						{
-							"key": "curatedDirectoryName",
-							"value": {
-								"type": "Expression",
-								"content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_directory_name"
-							}
-						}
-					],
-					"setSystemVariable": true
-				}
-			}
-		],
-		"parameters": {
-			"newsShowDetails": {
-				"type": "string"
-			},
-			"rawAccountName": {
-				"type": "string"
-			},
-			"rawContainerName": {
-				"type": "string"
-			},
-			"rawDirectoryName": {
-				"type": "string"
-			},
-			"curatedAccountName": {
-				"type": "string"
-			},
-			"curatedContainerName": {
-				"type": "string"
-			}
-		},
-		"variables": {
-			"azureAiSpeechLinkedServiceName": {
-				"type": "String",
-				"defaultValue": "AzureAiSpeech"
-			},
-			"azureAiSpeechRegion": {
-				"type": "String",
-				"defaultValue": "swedencentral"
-			},
-			"azureOpenAiLinkedServiceName": {
-				"type": "String",
-				"defaultValue": "AzureOpenAi"
-			},
-			"azureOpenAiBaseUrl": {
-				"type": "String",
-				"defaultValue": "https://aoai-swedencentral-mabuss.openai.azure.com/"
-			},
-			"azureOpenAiApiVersion": {
-				"type": "String",
-				"defaultValue": "2023-05-15"
-			},
-			"azureOpenAiDeploymentName": {
-				"type": "String",
-				"defaultValue": "gpt-4-32k"
-			},
-			"azureOpenAiModelName": {
-				"type": "String",
-				"defaultValue": "gpt-4-32k"
-			},
-			"rawMountPath": {
-				"type": "String",
-				"defaultValue": "raw"
-			},
-			"curatedMountPath": {
-				"type": "String",
-				"defaultValue": "curated"
-			},
-			"rawLinkedServiceName": {
-				"type": "String",
-				"defaultValue": "DataLakeRaw"
-			},
-			"curatedLinkedServiceName": {
-				"type": "String",
-				"defaultValue": "DataLakeCurated"
-			}
-		},
-		"folder": {
-			"name": "ChildPipelines"
-		},
-		"annotations": [],
-		"lastPublishTime": "2024-03-06T15:20:16Z"
-	},
-	"type": "Microsoft.Synapse/workspaces/pipelines"
+  "name": "RawToCuratedPipeline",
+  "properties": {
+    "description": "Pipeline for moving data from raw to the curated layer.",
+    "activities": [
+      {
+        "name": "ProcessNewsVideo",
+        "description": "Process Video file stored in raw layer.",
+        "type": "SynapseNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebook": {
+            "referenceName": "ProcessNewsVideo",
+            "type": "NotebookReference"
+          },
+          "parameters": {
+            "news_show_details": {
+              "value": {
+                "value": "@pipeline().parameters.newsShowDetails",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "azure_ai_speech_linked_service_name": {
+              "value": {
+                "value": "@variables('azureAiSpeechLinkedServiceName')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "azure_ai_speech_region": {
+              "value": {
+                "value": "@variables('azureAiSpeechRegion')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "azure_open_ai_linked_service_name": {
+              "value": {
+                "value": "@variables('azureOpenAiLinkedServiceName')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "azure_open_ai_base_url": {
+              "value": {
+                "value": "@variables('azureOpenAiBaseUrl')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "azure_open_ai_api_version": {
+              "value": {
+                "value": "@variables('azureOpenAiApiVersion')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "azure_open_ai_deployment_name": {
+              "value": {
+                "value": "@variables('azureOpenAiDeploymentName')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "azure_open_ai_model_name": {
+              "value": {
+                "value": "@variables('azureOpenAiModelName')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "source_linked_service_name": {
+              "value": {
+                "value": "@variables('rawLinkedServiceName')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "source_mount_path": {
+              "value": {
+                "value": "@variables('rawMountPath')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "source_account_name": {
+              "value": {
+                "value": "@pipeline().parameters.rawAccountName",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "source_container_name": {
+              "value": {
+                "value": "@pipeline().parameters.rawContainerName",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "source_file_path": {
+              "value": {
+                "value": "@pipeline().parameters.rawDirectoryName",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "sink_linked_service_name": {
+              "value": {
+                "value": "@variables('curatedLinkedServiceName')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "sink_mount_path": {
+              "value": {
+                "value": "@variables('curatedMountPath')",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "sink_account_name": {
+              "value": {
+                "value": "@pipeline().parameters.curatedAccountName",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "sink_container_name": {
+              "value": {
+                "value": "@pipeline().parameters.curatedContainerName",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          },
+          "snapshot": true,
+          "sparkPool": {
+            "referenceName": "test",
+            "type": "BigDataPoolReference"
+          },
+          "executorSize": "Medium",
+          "conf": {
+            "spark.dynamicAllocation.enabled": true
+          },
+          "driverSize": "Medium"
+        }
+      },
+      {
+        "name": "ReturnVariables",
+        "description": "Return variables to main pipeline.",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ProcessNewsVideo",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "pipelineReturnValue",
+          "value": [
+            {
+              "key": "curatedAdlsFilePath",
+              "value": {
+                "type": "Expression",
+                "content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_adls_path"
+              }
+            },
+            {
+              "key": "curatedAccountName",
+              "value": {
+                "type": "Expression",
+                "content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_account_name"
+              }
+            },
+            {
+              "key": "curatedContainerName",
+              "value": {
+                "type": "Expression",
+                "content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_container_name"
+              }
+            },
+            {
+              "key": "curatedDirectoryName",
+              "value": {
+                "type": "Expression",
+                "content": "@json(activity('ProcessNewsVideo').output.status.Output.result.exitValue).sink_directory_name"
+              }
+            }
+          ],
+          "setSystemVariable": true
+        }
+      }
+    ],
+    "parameters": {
+      "newsShowDetails": {
+        "type": "string"
+      },
+      "rawAccountName": {
+        "type": "string"
+      },
+      "rawContainerName": {
+        "type": "string"
+      },
+      "rawDirectoryName": {
+        "type": "string"
+      },
+      "curatedAccountName": {
+        "type": "string"
+      },
+      "curatedContainerName": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "azureAiSpeechLinkedServiceName": {
+        "type": "String",
+        "defaultValue": "AzureAiSpeech"
+      },
+      "azureAiSpeechRegion": {
+        "type": "String",
+        "defaultValue": "swedencentral"
+      },
+      "azureOpenAiLinkedServiceName": {
+        "type": "String",
+        "defaultValue": "AzureOpenAi"
+      },
+      "azureOpenAiBaseUrl": {
+        "type": "String",
+        "defaultValue": "https://aoai-swedencentral-mabuss.openai.azure.com/"
+      },
+      "azureOpenAiApiVersion": {
+        "type": "String",
+        "defaultValue": "2023-05-15"
+      },
+      "azureOpenAiDeploymentName": {
+        "type": "String",
+        "defaultValue": "gpt-4-32k"
+      },
+      "azureOpenAiModelName": {
+        "type": "String",
+        "defaultValue": "gpt-4-32k"
+      },
+      "rawMountPath": {
+        "type": "String",
+        "defaultValue": "raw"
+      },
+      "curatedMountPath": {
+        "type": "String",
+        "defaultValue": "curated"
+      },
+      "rawLinkedServiceName": {
+        "type": "String",
+        "defaultValue": "DataLakeRaw"
+      },
+      "curatedLinkedServiceName": {
+        "type": "String",
+        "defaultValue": "DataLakeCurated"
+      }
+    },
+    "folder": {
+      "name": "ChildPipelines"
+    },
+    "annotations": [],
+    "lastPublishTime": "2024-03-06T15:20:16Z"
+  },
+  "type": "Microsoft.Synapse/workspaces/pipelines"
 }

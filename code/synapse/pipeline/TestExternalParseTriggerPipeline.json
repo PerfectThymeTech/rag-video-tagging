@@ -1,239 +1,239 @@
 {
-	"name": "TestExternalParseTriggerPipeline",
-	"properties": {
-		"description": "Test Pipeline for parsing trigger details",
-		"activities": [
-			{
-				"name": "ExecuteParseTriggerPipeline",
-				"description": "Execute Pipeline to parse trigger information",
-				"type": "ExecutePipeline",
-				"dependsOn": [],
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "ParseTriggerPipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"triggerFilePath": {
-							"value": "@pipeline().parameters.triggerFilePath",
-							"type": "Expression"
-						},
-						"triggerFileName": {
-							"value": "@pipeline().parameters.triggerFileName",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableExternalContainerName",
-				"description": "Get Pipeline Variable \"externalContainerName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteParseTriggerPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "externalContainerName",
-					"value": {
-						"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalContainerName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableExternalDirectoryName",
-				"description": "Get Pipeline Variable \"externalDirectoryName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteParseTriggerPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "externalDirectoryName",
-					"value": {
-						"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalDirectoryName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableExternalFileName",
-				"description": "Get Pipeline Variable \"externalFileName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteParseTriggerPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "externalFileName",
-					"value": {
-						"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalFileName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "IfExternalContainerName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableExternalContainerName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('externalContainerName'), pipeline().parameters.expectedExternalContainerName)",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailExternalContainerName",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "IfExternalDirectoryName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableExternalDirectoryName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('externalDirectoryName'), pipeline().parameters.expectedExternalDirectoryName)",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailExternalContainerName_copy1",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "IfExternalFileName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableExternalFileName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('externalFileName'), pipeline().parameters.expectedExternalFileName)",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailExternalContainerName_copy1_copy1",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			}
-		],
-		"parameters": {
-			"triggerFilePath": {
-				"type": "string",
-				"defaultValue": "external/directory001"
-			},
-			"triggerFileName": {
-				"type": "string",
-				"defaultValue": "movie.mp4"
-			},
-			"expectedExternalContainerName": {
-				"type": "string",
-				"defaultValue": "external"
-			},
-			"expectedExternalDirectoryName": {
-				"type": "string",
-				"defaultValue": "directory001"
-			},
-			"expectedExternalFileName": {
-				"type": "string",
-				"defaultValue": "movie.mp4"
-			}
-		},
-		"variables": {
-			"externalContainerName": {
-				"type": "String"
-			},
-			"externalDirectoryName": {
-				"type": "String"
-			},
-			"externalFileName": {
-				"type": "String"
-			}
-		},
-		"folder": {
-			"name": "Tests"
-		},
-		"annotations": [],
-		"lastPublishTime": "2024-03-06T15:26:39Z"
-	},
-	"type": "Microsoft.Synapse/workspaces/pipelines"
+  "name": "TestExternalParseTriggerPipeline",
+  "properties": {
+    "description": "Test Pipeline for parsing trigger details",
+    "activities": [
+      {
+        "name": "ExecuteParseTriggerPipeline",
+        "description": "Execute Pipeline to parse trigger information",
+        "type": "ExecutePipeline",
+        "dependsOn": [],
+        "userProperties": [],
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "ParseTriggerPipeline",
+            "type": "PipelineReference"
+          },
+          "waitOnCompletion": true,
+          "parameters": {
+            "triggerFilePath": {
+              "value": "@pipeline().parameters.triggerFilePath",
+              "type": "Expression"
+            },
+            "triggerFileName": {
+              "value": "@pipeline().parameters.triggerFileName",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableExternalContainerName",
+        "description": "Get Pipeline Variable \"externalContainerName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteParseTriggerPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "externalContainerName",
+          "value": {
+            "value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalContainerName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableExternalDirectoryName",
+        "description": "Get Pipeline Variable \"externalDirectoryName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteParseTriggerPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "externalDirectoryName",
+          "value": {
+            "value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalDirectoryName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableExternalFileName",
+        "description": "Get Pipeline Variable \"externalFileName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteParseTriggerPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "externalFileName",
+          "value": {
+            "value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalFileName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "IfExternalContainerName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableExternalContainerName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('externalContainerName'), pipeline().parameters.expectedExternalContainerName)",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailExternalContainerName",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "IfExternalDirectoryName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableExternalDirectoryName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('externalDirectoryName'), pipeline().parameters.expectedExternalDirectoryName)",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailExternalContainerName_copy1",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "IfExternalFileName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableExternalFileName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('externalFileName'), pipeline().parameters.expectedExternalFileName)",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailExternalContainerName_copy1_copy1",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {
+      "triggerFilePath": {
+        "type": "string",
+        "defaultValue": "external/directory001"
+      },
+      "triggerFileName": {
+        "type": "string",
+        "defaultValue": "movie.mp4"
+      },
+      "expectedExternalContainerName": {
+        "type": "string",
+        "defaultValue": "external"
+      },
+      "expectedExternalDirectoryName": {
+        "type": "string",
+        "defaultValue": "directory001"
+      },
+      "expectedExternalFileName": {
+        "type": "string",
+        "defaultValue": "movie.mp4"
+      }
+    },
+    "variables": {
+      "externalContainerName": {
+        "type": "String"
+      },
+      "externalDirectoryName": {
+        "type": "String"
+      },
+      "externalFileName": {
+        "type": "String"
+      }
+    },
+    "folder": {
+      "name": "Tests"
+    },
+    "annotations": [],
+    "lastPublishTime": "2024-03-06T15:26:39Z"
+  },
+  "type": "Microsoft.Synapse/workspaces/pipelines"
 }

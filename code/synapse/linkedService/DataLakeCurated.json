@@ -1,14 +1,14 @@
 {
-	"name": "DataLakeCurated",
-	"properties": {
-		"annotations": [],
-		"type": "AzureBlobFS",
-		"typeProperties": {
-			"url": "https://tstsynapsestg.dfs.core.windows.net/"
-		},
-		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
-			"type": "IntegrationRuntimeReference"
-		}
-	}
+  "name": "DataLakeCurated",
+  "properties": {
+    "annotations": [],
+    "type": "AzureBlobFS",
+    "typeProperties": {
+      "url": "https://tstsynapsestg.dfs.core.windows.net/"
+    },
+    "connectVia": {
+      "referenceName": "AutoResolveIntegrationRuntime",
+      "type": "IntegrationRuntimeReference"
+    }
+  }
 }

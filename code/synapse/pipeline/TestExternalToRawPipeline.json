@@ -1,342 +1,342 @@
 {
-	"name": "TestExternalToRawPipeline",
-	"properties": {
-		"activities": [
-			{
-				"name": "ExecuteExternalToRawPipeline",
-				"description": "Execute External to Raw Pipeline",
-				"type": "ExecutePipeline",
-				"dependsOn": [],
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "ExternalToRawPipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"externalContainerName": {
-							"value": "@pipeline().parameters.externalContainerName",
-							"type": "Expression"
-						},
-						"externalDirectoryName": {
-							"value": "@string('')",
-							"type": "Expression"
-						},
-						"externalFileName": {
-							"value": "@pipeline().parameters.externalFileName",
-							"type": "Expression"
-						},
-						"rawContainerName": {
-							"value": "@pipeline().parameters.rawContainerName",
-							"type": "Expression"
-						},
-						"rawDirectoryName": {
-							"value": "@string('')",
-							"type": "Expression"
-						},
-						"externalAccountName": {
-							"value": "@pipeline().parameters.externalAccountName",
-							"type": "Expression"
-						},
-						"rawAccountName": {
-							"value": "@pipeline().parameters.rawAccountName",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableRawAdlsFilePath",
-				"description": "Get Pipeline Variable \"rawAdlsFilePath\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "rawAdlsFilePath",
-					"value": {
-						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAdlsFilePath)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableRawAccountName",
-				"description": "Get Pipeline Variable \"rawAccountName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "rawAccountName",
-					"value": {
-						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableRawContainerName",
-				"description": "Get Pipeline Variable \"rawContainerName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "rawContainerName",
-					"value": {
-						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "GetPipelineVariableRawDirectoryName",
-				"description": "Get Pipeline Variable \"rawDirectoryName\"",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "rawDirectoryName",
-					"value": {
-						"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "IfRawAdlsFilePath",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableRawAdlsFilePath",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('rawAdlsFilePath'), replace(pipeline().parameters.expectedRawAdlsFilePath, '<pipeline-id>', activity('ExecuteExternalToRawPipeline').output.pipelineRunId))",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailRawAdlsFilePath",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "IfRawAccountName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableRawAccountName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('rawAccountName'), pipeline().parameters.expectedRawAccountName)",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailRawAccountName",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "IfRawContainerName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableRawContainerName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('rawContainerName'), pipeline().parameters.expectedRawContainerName)",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailRawContainerName",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "IfRawDirectoryName",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "GetPipelineVariableRawDirectoryName",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(variables('rawDirectoryName'), replace(pipeline().parameters.expectedRawDirectoryName, '<pipeline-id>', activity('ExecuteExternalToRawPipeline').output.pipelineRunId))",
-						"type": "Expression"
-					},
-					"ifFalseActivities": [
-						{
-							"name": "FailRawDirectoryName",
-							"type": "Fail",
-							"dependsOn": [],
-							"userProperties": [],
-							"typeProperties": {
-								"message": "Unexpected Value",
-								"errorCode": "500"
-							}
-						}
-					]
-				}
-			}
-		],
-		"parameters": {
-			"externalContainerName": {
-				"type": "string",
-				"defaultValue": "external"
-			},
-			"externalDirectoryName": {
-				"type": "string"
-			},
-			"externalFileName": {
-				"type": "string",
-				"defaultValue": "movie.mp4"
-			},
-			"rawContainerName": {
-				"type": "string",
-				"defaultValue": "raw"
-			},
-			"rawDirectoryName": {
-				"type": "string"
-			},
-			"externalAccountName": {
-				"type": "string",
-				"defaultValue": "tstsynapsestg"
-			},
-			"rawAccountName": {
-				"type": "string",
-				"defaultValue": "tstsynapsestg"
-			},
-			"expectedRawAdlsFilePath": {
-				"type": "string",
-				"defaultValue": "abfss://raw@tstsynapsestg.dfs.core.windows.net/<pipeline-id>//movie.mp4"
-			},
-			"expectedRawAccountName": {
-				"type": "string",
-				"defaultValue": "tstsynapsestg"
-			},
-			"expectedRawContainerName": {
-				"type": "string",
-				"defaultValue": "raw"
-			},
-			"expectedRawDirectoryName": {
-				"type": "string",
-				"defaultValue": "<pipeline-id>//movie.mp4"
-			}
-		},
-		"variables": {
-			"rawAdlsFilePath": {
-				"type": "String"
-			},
-			"rawAccountName": {
-				"type": "String"
-			},
-			"rawContainerName": {
-				"type": "String"
-			},
-			"rawDirectoryName": {
-				"type": "String"
-			},
-			"test": {
-				"type": "String"
-			}
-		},
-		"folder": {
-			"name": "Tests"
-		},
-		"annotations": [],
-		"lastPublishTime": "2024-03-06T15:26:39Z"
-	},
-	"type": "Microsoft.Synapse/workspaces/pipelines"
+  "name": "TestExternalToRawPipeline",
+  "properties": {
+    "activities": [
+      {
+        "name": "ExecuteExternalToRawPipeline",
+        "description": "Execute External to Raw Pipeline",
+        "type": "ExecutePipeline",
+        "dependsOn": [],
+        "userProperties": [],
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "ExternalToRawPipeline",
+            "type": "PipelineReference"
+          },
+          "waitOnCompletion": true,
+          "parameters": {
+            "externalContainerName": {
+              "value": "@pipeline().parameters.externalContainerName",
+              "type": "Expression"
+            },
+            "externalDirectoryName": {
+              "value": "@string('')",
+              "type": "Expression"
+            },
+            "externalFileName": {
+              "value": "@pipeline().parameters.externalFileName",
+              "type": "Expression"
+            },
+            "rawContainerName": {
+              "value": "@pipeline().parameters.rawContainerName",
+              "type": "Expression"
+            },
+            "rawDirectoryName": {
+              "value": "@string('')",
+              "type": "Expression"
+            },
+            "externalAccountName": {
+              "value": "@pipeline().parameters.externalAccountName",
+              "type": "Expression"
+            },
+            "rawAccountName": {
+              "value": "@pipeline().parameters.rawAccountName",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableRawAdlsFilePath",
+        "description": "Get Pipeline Variable \"rawAdlsFilePath\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteExternalToRawPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "rawAdlsFilePath",
+          "value": {
+            "value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAdlsFilePath)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableRawAccountName",
+        "description": "Get Pipeline Variable \"rawAccountName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteExternalToRawPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "rawAccountName",
+          "value": {
+            "value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableRawContainerName",
+        "description": "Get Pipeline Variable \"rawContainerName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteExternalToRawPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "rawContainerName",
+          "value": {
+            "value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "GetPipelineVariableRawDirectoryName",
+        "description": "Get Pipeline Variable \"rawDirectoryName\"",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "ExecuteExternalToRawPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "variableName": "rawDirectoryName",
+          "value": {
+            "value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "IfRawAdlsFilePath",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableRawAdlsFilePath",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('rawAdlsFilePath'), replace(pipeline().parameters.expectedRawAdlsFilePath, '<pipeline-id>', activity('ExecuteExternalToRawPipeline').output.pipelineRunId))",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailRawAdlsFilePath",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "IfRawAccountName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableRawAccountName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('rawAccountName'), pipeline().parameters.expectedRawAccountName)",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailRawAccountName",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "IfRawContainerName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableRawContainerName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('rawContainerName'), pipeline().parameters.expectedRawContainerName)",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailRawContainerName",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "IfRawDirectoryName",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "GetPipelineVariableRawDirectoryName",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(variables('rawDirectoryName'), replace(pipeline().parameters.expectedRawDirectoryName, '<pipeline-id>', activity('ExecuteExternalToRawPipeline').output.pipelineRunId))",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [
+            {
+              "name": "FailRawDirectoryName",
+              "type": "Fail",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "message": "Unexpected Value",
+                "errorCode": "500"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {
+      "externalContainerName": {
+        "type": "string",
+        "defaultValue": "external"
+      },
+      "externalDirectoryName": {
+        "type": "string"
+      },
+      "externalFileName": {
+        "type": "string",
+        "defaultValue": "movie.mp4"
+      },
+      "rawContainerName": {
+        "type": "string",
+        "defaultValue": "raw"
+      },
+      "rawDirectoryName": {
+        "type": "string"
+      },
+      "externalAccountName": {
+        "type": "string",
+        "defaultValue": "tstsynapsestg"
+      },
+      "rawAccountName": {
+        "type": "string",
+        "defaultValue": "tstsynapsestg"
+      },
+      "expectedRawAdlsFilePath": {
+        "type": "string",
+        "defaultValue": "abfss://raw@tstsynapsestg.dfs.core.windows.net/<pipeline-id>//movie.mp4"
+      },
+      "expectedRawAccountName": {
+        "type": "string",
+        "defaultValue": "tstsynapsestg"
+      },
+      "expectedRawContainerName": {
+        "type": "string",
+        "defaultValue": "raw"
+      },
+      "expectedRawDirectoryName": {
+        "type": "string",
+        "defaultValue": "<pipeline-id>//movie.mp4"
+      }
+    },
+    "variables": {
+      "rawAdlsFilePath": {
+        "type": "String"
+      },
+      "rawAccountName": {
+        "type": "String"
+      },
+      "rawContainerName": {
+        "type": "String"
+      },
+      "rawDirectoryName": {
+        "type": "String"
+      },
+      "test": {
+        "type": "String"
+      }
+    },
+    "folder": {
+      "name": "Tests"
+    },
+    "annotations": [],
+    "lastPublishTime": "2024-03-06T15:26:39Z"
+  },
+  "type": "Microsoft.Synapse/workspaces/pipelines"
 }

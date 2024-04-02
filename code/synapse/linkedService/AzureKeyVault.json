@@ -1,11 +1,11 @@
 {
-	"name": "AzureKeyVault",
-	"type": "Microsoft.Synapse/workspaces/linkedservices",
-	"properties": {
-		"annotations": [],
-		"type": "AzureKeyVault",
-		"typeProperties": {
-			"baseUrl": "https://mabuss-cog-kv.vault.azure.net/"
-		}
-	}
+  "name": "AzureKeyVault",
+  "type": "Microsoft.Synapse/workspaces/linkedservices",
+  "properties": {
+    "annotations": [],
+    "type": "AzureKeyVault",
+    "typeProperties": {
+      "baseUrl": "https://mabuss-cog-kv.vault.azure.net/"
+    }
+  }
 }

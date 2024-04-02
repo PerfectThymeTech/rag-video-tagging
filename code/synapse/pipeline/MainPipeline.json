@@ -1,190 +1,190 @@
 {
-	"name": "MainPipeline",
-	"properties": {
-		"activities": [
-			{
-				"name": "ExecuteExternalToRawPipeline",
-				"description": "Execute External to Raw Pipeline",
-				"type": "ExecutePipeline",
-				"dependsOn": [
-					{
-						"activity": "ExecuteParseTriggerPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "ExternalToRawPipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"externalContainerName": {
-							"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalContainerName)",
-							"type": "Expression"
-						},
-						"externalDirectoryName": {
-							"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalDirectoryName)",
-							"type": "Expression"
-						},
-						"externalFileName": {
-							"value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalFileName)",
-							"type": "Expression"
-						},
-						"rawContainerName": {
-							"value": "@variables('rawContainerName')",
-							"type": "Expression"
-						},
-						"rawDirectoryName": {
-							"value": "@string('')",
-							"type": "Expression"
-						},
-						"externalAccountName": {
-							"value": "@variables('externalAccountName')",
-							"type": "Expression"
-						},
-						"rawAccountName": {
-							"value": "@variables('rawAccountName')",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "ExecuteRawToCuratedPipeline",
-				"description": "Execute Raw to Curated Pipeline",
-				"type": "ExecutePipeline",
-				"dependsOn": [
-					{
-						"activity": "ExecuteExternalToRawPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "RawToCuratedPipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"newsShowDetails": {
-							"value": "@string('')",
-							"type": "Expression"
-						},
-						"rawAccountName": {
-							"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
-							"type": "Expression"
-						},
-						"rawContainerName": {
-							"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
-							"type": "Expression"
-						},
-						"rawDirectoryName": {
-							"value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
-							"type": "Expression"
-						},
-						"curatedAccountName": {
-							"value": "@variables('curatedAccountName')",
-							"type": "Expression"
-						},
-						"curatedContainerName": {
-							"value": "@variables('curatedContainerName')",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "ExecuteParseTriggerPipeline",
-				"description": "Execute Pipeline to parse trigger information",
-				"type": "ExecutePipeline",
-				"dependsOn": [],
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "ParseTriggerPipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"triggerFilePath": {
-							"value": "@pipeline().parameters.triggerFilePath",
-							"type": "Expression"
-						},
-						"triggerFileName": {
-							"value": "@pipeline().parameters.triggerFileName",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "ExecutePushToMetdataStorePipeline",
-				"description": "Execute Pipeline to push to metadata store",
-				"type": "ExecutePipeline",
-				"dependsOn": [
-					{
-						"activity": "ExecuteRawToCuratedPipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "PushToMetdataStorePipeline",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true
-				}
-			}
-		],
-		"parameters": {
-			"triggerFilePath": {
-				"type": "string"
-			},
-			"triggerFileName": {
-				"type": "string"
-			}
-		},
-		"variables": {
-			"externalAccountName": {
-				"type": "String",
-				"defaultValue": "tstsynapsestg"
-			},
-			"externalContainerName": {
-				"type": "String",
-				"defaultValue": "external"
-			},
-			"rawAccountName": {
-				"type": "String",
-				"defaultValue": "tstsynapsestg"
-			},
-			"rawContainerName": {
-				"type": "String",
-				"defaultValue": "raw"
-			},
-			"rawDirectoryName": {
-				"type": "String"
-			},
-			"curatedAccountName": {
-				"type": "String",
-				"defaultValue": "tstsynapsestg"
-			},
-			"curatedContainerName": {
-				"type": "String",
-				"defaultValue": "curated"
-			}
-		},
-		"annotations": [],
-		"lastPublishTime": "2024-03-06T17:33:50Z"
-	},
-	"type": "Microsoft.Synapse/workspaces/pipelines"
+  "name": "MainPipeline",
+  "properties": {
+    "activities": [
+      {
+        "name": "ExecuteExternalToRawPipeline",
+        "description": "Execute External to Raw Pipeline",
+        "type": "ExecutePipeline",
+        "dependsOn": [
+          {
+            "activity": "ExecuteParseTriggerPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "ExternalToRawPipeline",
+            "type": "PipelineReference"
+          },
+          "waitOnCompletion": true,
+          "parameters": {
+            "externalContainerName": {
+              "value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalContainerName)",
+              "type": "Expression"
+            },
+            "externalDirectoryName": {
+              "value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalDirectoryName)",
+              "type": "Expression"
+            },
+            "externalFileName": {
+              "value": "@string(activity('ExecuteParseTriggerPipeline').output.pipelineReturnValue.externalFileName)",
+              "type": "Expression"
+            },
+            "rawContainerName": {
+              "value": "@variables('rawContainerName')",
+              "type": "Expression"
+            },
+            "rawDirectoryName": {
+              "value": "@string('')",
+              "type": "Expression"
+            },
+            "externalAccountName": {
+              "value": "@variables('externalAccountName')",
+              "type": "Expression"
+            },
+            "rawAccountName": {
+              "value": "@variables('rawAccountName')",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "ExecuteRawToCuratedPipeline",
+        "description": "Execute Raw to Curated Pipeline",
+        "type": "ExecutePipeline",
+        "dependsOn": [
+          {
+            "activity": "ExecuteExternalToRawPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "RawToCuratedPipeline",
+            "type": "PipelineReference"
+          },
+          "waitOnCompletion": true,
+          "parameters": {
+            "newsShowDetails": {
+              "value": "@string('')",
+              "type": "Expression"
+            },
+            "rawAccountName": {
+              "value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawAccountName)",
+              "type": "Expression"
+            },
+            "rawContainerName": {
+              "value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawContainerName)",
+              "type": "Expression"
+            },
+            "rawDirectoryName": {
+              "value": "@string(activity('ExecuteExternalToRawPipeline').output.pipelineReturnValue.rawDirectoryName)",
+              "type": "Expression"
+            },
+            "curatedAccountName": {
+              "value": "@variables('curatedAccountName')",
+              "type": "Expression"
+            },
+            "curatedContainerName": {
+              "value": "@variables('curatedContainerName')",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "ExecuteParseTriggerPipeline",
+        "description": "Execute Pipeline to parse trigger information",
+        "type": "ExecutePipeline",
+        "dependsOn": [],
+        "userProperties": [],
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "ParseTriggerPipeline",
+            "type": "PipelineReference"
+          },
+          "waitOnCompletion": true,
+          "parameters": {
+            "triggerFilePath": {
+              "value": "@pipeline().parameters.triggerFilePath",
+              "type": "Expression"
+            },
+            "triggerFileName": {
+              "value": "@pipeline().parameters.triggerFileName",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "ExecutePushToMetdataStorePipeline",
+        "description": "Execute Pipeline to push to metadata store",
+        "type": "ExecutePipeline",
+        "dependsOn": [
+          {
+            "activity": "ExecuteRawToCuratedPipeline",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "userProperties": [],
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "PushToMetdataStorePipeline",
+            "type": "PipelineReference"
+          },
+          "waitOnCompletion": true
+        }
+      }
+    ],
+    "parameters": {
+      "triggerFilePath": {
+        "type": "string"
+      },
+      "triggerFileName": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "externalAccountName": {
+        "type": "String",
+        "defaultValue": "tstsynapsestg"
+      },
+      "externalContainerName": {
+        "type": "String",
+        "defaultValue": "external"
+      },
+      "rawAccountName": {
+        "type": "String",
+        "defaultValue": "tstsynapsestg"
+      },
+      "rawContainerName": {
+        "type": "String",
+        "defaultValue": "raw"
+      },
+      "rawDirectoryName": {
+        "type": "String"
+      },
+      "curatedAccountName": {
+        "type": "String",
+        "defaultValue": "tstsynapsestg"
+      },
+      "curatedContainerName": {
+        "type": "String",
+        "defaultValue": "curated"
+      }
+    },
+    "annotations": [],
+    "lastPublishTime": "2024-03-06T17:33:50Z"
+  },
+  "type": "Microsoft.Synapse/workspaces/pipelines"
 }
