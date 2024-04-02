@@ -1,11 +1,15 @@
 import json
 import logging
 import os
+from typing import Any, Dict
 
 import azure.durable_functions as df
 from azure.identity.aio import DefaultAzureCredential
 from azure.storage.blob.aio import BlobServiceClient
+from models.videoextraction import VideoExtractionOrchestratorRequest
 from moviepy.editor import VideoFileClip
+from pydantic import TypeAdapter
+from shared import utils
 from shared.config import settings
 
 bp = df.Blueprint()
@@ -15,16 +19,49 @@ bp = df.Blueprint()
     context_name="context"
 )  # , orchestration="VideoOrchestrator")
 def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
+    # Parse payload
+    payload: Dict[str, Any] = context.get_input()
+    logging.info(f"Input Data loaded: '{payload}'")
+    payload_obj: VideoExtractionOrchestratorRequest = TypeAdapter(
+        VideoExtractionOrchestratorRequest
+    ).validate_json(json.dumps(payload.get("orchestrator_workflow_properties")))
+    logging.info(f"Data loaded: '{payload_obj}'")
+
     # Download Video Test
     logging.info("Downloading video")
     input_download_video = {
-        "storage_account_name": "rgdurablefunctiona8c3",
-        "storage_container_name": "video",
-        "storage_blob_name": "movie.mp4",
+        "storage_account_name": payload_obj.content_url.host.removesuffix(
+            ".blob.core.windows.net"
+        ),
+        "storage_container_name": payload_obj.content_url.path.split("/")[0],
+        "storage_blob_name": "/".join(payload_obj.content_url.path.split("/")[1:]),
         "instance_id": context.instance_id,
     }
     result_download_video = yield context.call_activity(
         "download_video", json.dumps(input_download_video)
+    )
+
+    # Extract video clips
+    logging.info("Extract video clips")
+    input_extract_video_clip = {
+        "video_file_path": result_download_video,
+        "instance_id": context.instance_id,
+        "start": "19.570367",
+        "offset": "15.570367",
+    }
+    result_extract_video_clip = yield context.call_activity(
+        "extract_video_clip", json.dumps(input_extract_video_clip)
+    )
+
+    # Upload video clip
+    input_upload_video = {
+        "video_file_path": result_extract_video_clip,
+        "instance_id": context.instance_id,
+        "storage_account_name": settings.STORAGE_ACCOUNT_NAME,
+        "storage_container_name": settings.STORAGE_ACCOUNT_CONTAINER,
+    }
+    result_upload_video = yield context.call_activity(
+        "upload_video", json.dumps(input_upload_video)
     )
 
     # Delete Video test
@@ -37,7 +74,7 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
         "delete_video", json.dumps(input_delete_video)
     )
 
-    return [result_download_video, result_delete_video]
+    return [result_upload_video]
 
 
 @bp.activity_trigger(input_name="inputJson")  # , activity="ExtractVideoClip")
@@ -48,7 +85,7 @@ def extract_video_clip(inputJson: str):
     input_data_dict = json.loads(inputJson)
     try:
         video_file_path = input_data_dict.get("video_file_path")
-        instance_id = input_data_dict.get("sink_video_file_p")
+        instance_id = input_data_dict.get("instance_id")
         start_in_secs = int(float(input_data_dict.get("start")))
         offset_in_secs = int(float(input_data_dict.get("offset")))
 
@@ -69,21 +106,24 @@ def extract_video_clip(inputJson: str):
     video_clip = video.subclip(start_in_secs, start_in_secs + offset_in_secs)
 
     # Create folder
-    video_clip_file_path = os.path.join(
+    video_clip_folder_path = os.path.join(
         settings.HOME_DIRECTORY, instance_id, "video_clips"
     )
-    if not os.path.exists(video_clip_file_path):
-        os.makedirs(video_clip_file_path)
+    if not os.path.exists(video_clip_folder_path):
+        os.makedirs(video_clip_folder_path)
 
     # Save video clip
     video_clip_file_type = str.split(video_file_path, ".")[-1]
     video_clip_file_name = (
         f"video_{start_in_secs}_{offset_in_secs}.{video_clip_file_type}"
     )
-    video_clip_file = os.path.join(video_clip_file_path, video_clip_file_name)
-    video_clip.write_videofile(video_clip_file)
+    video_clip_file_path = os.path.join(video_clip_folder_path, video_clip_file_name)
+    current_working_path = os.getcwd()
+    os.chdir(video_clip_folder_path)
+    video_clip.write_videofile(video_clip_file_name)
+    os.chdir(current_working_path)
 
-    return video_clip_file
+    return video_clip_file_path
 
 
 @bp.activity_trigger(input_name="inputJson")  # , activity="DownloadVideo")
@@ -144,13 +184,13 @@ async def upload_video(inputJson: str):
         video_file_path = input_data_dict.get("video_file_path")
         storage_account_name = input_data_dict.get("storage_account_name")
         storage_container_name = input_data_dict.get("storage_container_name")
-        storage_blob_name = input_data_dict.get("storage_blob_name")
+        # storage_blob_name = input_data_dict.get("storage_blob_name")
         instance_id = input_data_dict.get("instance_id")
 
         if (
             not storage_account_name
             or not storage_container_name
-            or not storage_blob_name
+            # or not storage_blob_name
             or not instance_id
         ):
             raise ValueError()
@@ -158,6 +198,7 @@ async def upload_video(inputJson: str):
         raise ValueError("Input values inconsistent or not provided.")
 
     # Upload file
+    storage_blob_name = os.path.basename(video_file_path)
     credential = DefaultAzureCredential()
     blob_service_client = BlobServiceClient(
         f"https://{storage_account_name}.blob.core.windows.net", credential=credential
@@ -167,8 +208,10 @@ async def upload_video(inputJson: str):
     )
     with open(file=video_file_path, mode="rb") as data:
         blob_client = await container_client.upload_blob(
-            name=storage_container_name, data=data, overwrite=True
+            name=storage_blob_name, data=data, overwrite=True
         )
+
+    logging.info(f"Finished uploading video clip to {blob_client.url}")
 
     return blob_client.url
 
@@ -188,10 +231,9 @@ async def delete_video(inputJson: str):
     except ValueError:
         raise ValueError("Input values inconsistent or not provided.")
 
-    # Read file size
-    file_size = os.path.getsize(video_file_path)
-    logging.info(f"Deleting file '{video_file_path}' with size {file_size}")
+    # Define folder path
+    folder_path = os.path.join(settings.HOME_DIRECTORY, instance_id)
 
-    # Remove file
-    os.remove(video_file_path)
+    # Remove folder recursively
+    utils.delete_directory(path=folder_path)
     return True
