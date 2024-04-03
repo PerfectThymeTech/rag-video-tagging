@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, Field, FilePath, HttpUrl, field_validator
 from pydantic.dataclasses import dataclass
 
 
@@ -29,7 +29,7 @@ class VideoExtractionOrchestratorRequest(BaseModel):
             raise ValueError(
                 f"Please provide a valid blob storage url with a '.blob.core.windows.net' host url. Provided value '{u.host}'."
             )
-        elif not u.path or len(u.path.split("/")) <= 1:
+        elif not u.path or len(u.path.split("/")) <= 2:
             logging.error(f"Path provided in content url: {u.port}")
             raise ValueError(
                 f"Please provide a valid blob storage url with a container and file name. Provided value '{u.path}'."
@@ -59,22 +59,26 @@ class VideoExtractionOrchestratorRequest(BaseModel):
             raise ValueError(
                 f"Please provide a valid blob storage url without a password. Provided value '{u.password}'."
             )
+        return u
 
 
+@dataclass
 class DownloadVideoRequest(BaseModel):
-    storage_account_name: str
-    storage_container_name: str
+    storage_domain_name: str
+    storage_container_name: str = Field(min_length=3, max_length=63)
     storage_blob_name: str
     instance_id: str
 
 
+@dataclass
 class UploadVideoRequest(BaseModel):
-    video_file_path: str
-    storage_account_name: str
-    storage_container_name: str
+    video_file_path: FilePath
+    storage_domain_name: str
+    storage_container_name: str = Field(min_length=3, max_length=63)
     instance_id: str
 
 
+@dataclass
 class DeleteVideoRequest(BaseModel):
-    video_file_path: str
+    video_file_path: FilePath
     instance_id: str
