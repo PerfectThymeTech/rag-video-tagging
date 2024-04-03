@@ -4,8 +4,6 @@ import os
 from typing import Any, Dict
 
 import azure.durable_functions as df
-from azure.identity.aio import DefaultAzureCredential
-from azure.storage.blob.aio import BlobServiceClient
 from models.videoextraction import VideoExtractionOrchestratorRequest
 from moviepy.editor import VideoFileClip
 from pydantic import TypeAdapter
@@ -22,19 +20,19 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
     # Parse payload
     payload: Dict[str, Any] = context.get_input()
     logging.info(f"Input Data loaded: '{payload}'")
-    payload_obj: VideoExtractionOrchestratorRequest = TypeAdapter(
-        VideoExtractionOrchestratorRequest
-    ).validate_json(json.dumps(payload.get("orchestrator_workflow_properties")))
+    payload_obj: VideoExtractionOrchestratorRequest = (
+        VideoExtractionOrchestratorRequest.model_validate(
+            payload.get("orchestrator_workflow_properties")
+        )
+    )
     logging.info(f"Data loaded: '{payload_obj}'")
 
     # Download Video Test
     logging.info("Downloading video")
     input_download_video = {
-        "storage_account_name": payload_obj.content_url.host.removesuffix(
-            ".blob.core.windows.net"
-        ),
-        "storage_container_name": payload_obj.content_url.path.split("/")[0],
-        "storage_blob_name": "/".join(payload_obj.content_url.path.split("/")[1:]),
+        "storage_domain_name": payload_obj.content_url.host,
+        "storage_container_name": payload_obj.content_url.path.split("/")[1],
+        "storage_blob_name": "/".join(payload_obj.content_url.path.split("/")[2:]),
         "instance_id": context.instance_id,
     }
     result_download_video = yield context.call_activity(
@@ -65,7 +63,7 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
         input_upload_video = {
             "video_file_path": video_clip,
             "instance_id": context.instance_id,
-            "storage_account_name": settings.STORAGE_ACCOUNT_NAME,
+            "storage_domain_name": settings.STORAGE_DOMAIN_NAME,
             "storage_container_name": settings.STORAGE_ACCOUNT_CONTAINER,
         }
         tasks_upload_video_clips.append(
@@ -81,7 +79,7 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
     }
     _ = yield context.call_activity("delete_video", json.dumps(input_delete_video))
 
-    return [results_upload_video]
+    return results_upload_video
 
 
 @bp.activity_trigger(input_name="inputJson")  # , activity="ExtractVideoClip")
@@ -140,13 +138,13 @@ async def download_video(inputJson: str) -> str:
     # Parse input
     input_data_dict = json.loads(inputJson)
     try:
-        storage_account_name = input_data_dict.get("storage_account_name")
+        storage_domain_name = input_data_dict.get("storage_domain_name")
         storage_container_name = input_data_dict.get("storage_container_name")
         storage_blob_name = input_data_dict.get("storage_blob_name")
         instance_id = input_data_dict.get("instance_id")
 
         if (
-            not storage_account_name
+            not storage_domain_name
             or not storage_container_name
             or not storage_blob_name
             or not instance_id
@@ -166,19 +164,14 @@ async def download_video(inputJson: str) -> str:
         os.makedirs(download_file_folder)
 
     # Download file
-    credential = DefaultAzureCredential()
-    blob_service_client = BlobServiceClient(
-        f"https://{storage_account_name}.blob.core.windows.net", credential=credential
+    result_download_blob = await utils.download_blob(
+        file_path=download_file_path,
+        storage_domain_name=storage_domain_name,
+        storage_container_name=storage_container_name,
+        storage_blob_name=storage_blob_name,
     )
-    blob_client = blob_service_client.get_blob_client(
-        container=storage_container_name, blob=storage_blob_name
-    )
-    with open(file=download_file_path, mode="wb") as sample_blob:
-        download_stream = await blob_client.download_blob()
-        data = await download_stream.readall()
-        sample_blob.write(data)
 
-    return download_file_path
+    return result_download_blob
 
 
 @bp.activity_trigger(input_name="inputJson")  # , activity="UploadVideo")
@@ -189,37 +182,27 @@ async def upload_video(inputJson: str):
     input_data_dict = json.loads(inputJson)
     try:
         video_file_path = input_data_dict.get("video_file_path")
-        storage_account_name = input_data_dict.get("storage_account_name")
+        storage_domain_name = input_data_dict.get("storage_domain_name")
         storage_container_name = input_data_dict.get("storage_container_name")
         instance_id = input_data_dict.get("instance_id")
 
-        if (
-            not storage_account_name
-            or not storage_container_name
-            # or not storage_blob_name
-            or not instance_id
-        ):
+        if not storage_domain_name or not storage_container_name or not instance_id:
             raise ValueError()
     except ValueError:
         raise ValueError("Input values inconsistent or not provided.")
 
+    # Define file name of blob
+    storage_blob_name = os.path.join(instance_id, os.path.basename(video_file_path))
+
     # Upload file
-    storage_blob_name = os.path.basename(video_file_path)
-    credential = DefaultAzureCredential()
-    blob_service_client = BlobServiceClient(
-        f"https://{storage_account_name}.blob.core.windows.net", credential=credential
+    result_upload_file = await utils.upload_blob(
+        file_path=video_file_path,
+        storage_domain_name=storage_domain_name,
+        storage_container_name=storage_container_name,
+        storage_blob_name=storage_blob_name,
     )
-    container_client = blob_service_client.get_container_client(
-        container=storage_container_name
-    )
-    with open(file=video_file_path, mode="rb") as data:
-        blob_client = await container_client.upload_blob(
-            name=storage_blob_name, data=data, overwrite=True
-        )
 
-    logging.info(f"Finished uploading video clip to {blob_client.url}")
-
-    return blob_client.url
+    return result_upload_file
 
 
 @bp.activity_trigger(input_name="inputJson")  # , activity="DeleteVideo")
@@ -241,5 +224,5 @@ async def delete_video(inputJson: str):
     folder_path = os.path.join(settings.HOME_DIRECTORY, instance_id)
 
     # Remove folder recursively
-    utils.delete_directory(path=folder_path)
+    utils.delete_directory(directory_path=folder_path)
     return True
