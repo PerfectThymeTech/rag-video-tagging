@@ -1,6 +1,18 @@
 {
   "version": "2.0",
   "logging": {
+    "fileLoggingMode": "debugOnly",
+    "logLevel": {
+      "default": "Information",
+      "Worker": "Information",
+      "Host": "Information",
+      "Host.Aggregator": "Information",
+      "Host.Results": "Information",
+      "Host.Triggers.DurableTask": "Information",
+      "Function": "Information",
+      "DurableTask.AzureStorage": "Warning",
+      "DurableTask.Core": "Warning"
+    },
     "applicationInsights": {
       "samplingSettings": {
         "isEnabled": true,
@@ -11,5 +23,27 @@
   "extensionBundle": {
     "id": "Microsoft.Azure.Functions.ExtensionBundle",
     "version": "[4.*, 5.0.0)"
+  },
+  "extensions": {
+    "durableTask": {
+      "hubName": "%TaskHubName%",
+      "extendedSessionsEnabled": false,
+      "extendedSessionIdleTimeoutInSeconds": 30,
+      "maxConcurrentActivityFunctions": 4,
+      "maxConcurrentOrchestratorFunctions": 4,
+      "storageProvider": {
+        "partitionCount": 4,
+        "useLegacyPartitionManagement": false,
+        "useTablePartitionManagement": false
+      },
+      "tracing": {
+        "distributedTracingEnabled": true,
+        "Version": "V2",
+        "traceInputsAndOutputs": false,
+        "traceReplayEvents": false
+      },
+      "useAppLease": true,
+      "storeInputsInOrchestrationHistory": true
+    }
   }
 }
