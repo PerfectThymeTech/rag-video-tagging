@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 
+import azure.durable_functions as df
 from azure.identity.aio import DefaultAzureCredential
 from azure.storage.blob.aio import BlobServiceClient
 
@@ -100,3 +101,21 @@ def delete_directory(directory_path: str) -> bool:
         raise ValueError(f"Provided directory path '{directory_path}' does not exist.")
 
     logging.info(f"Finished removing directory '{directory_path}' recursively.")
+
+
+def set_custom_status(
+    context: df.DurableOrchestrationContext, completion_percentage: float, status: str
+) -> None:
+    """Set custom status for orchestration function.
+
+    context (DurableOrchestrationContext): The context of the orchestrator function.
+    completion_percentage (float): The percentage of completion of the orchestrator function.
+    status (str): The status message of the orchestrator function.
+    RETURNS (None): Returns no value.
+    """
+    logging.info(f"Set custom status.")
+    # Create custom status message
+    custom_status = {"completion_percentage": completion_percentage, "status": status}
+
+    # Set custom status
+    context.set_custom_status(custom_status)
