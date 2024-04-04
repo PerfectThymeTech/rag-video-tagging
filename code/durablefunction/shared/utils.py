@@ -94,7 +94,7 @@ def delete_directory(directory_path: str) -> bool:
 
     # Check existence of directory and remove dir recursively
     if os.path.exists(path=directory_path):
-        shutil.rmtree(path=directory_path)
+        shutil.rmtree(path=directory_path, ignore_errors=True)
     else:
         logging.error(f"Provided directory path '{directory_path}' does not exist.")
         raise ValueError(f"Provided directory path '{directory_path}' does not exist.")
