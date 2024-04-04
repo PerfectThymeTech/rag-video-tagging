@@ -1,9 +1,11 @@
+import json
 import logging
 import os
 from datetime import datetime
 from typing import Any, Dict
 
 import azure.durable_functions as df
+from models.error import ErrorModel
 from models.videoextraction import (
     DeleteVideoRequest,
     DownloadVideoRequest,
@@ -12,6 +14,7 @@ from models.videoextraction import (
     VideoExtractionOrchestratorRequest,
 )
 from moviepy.editor import VideoFileClip
+from pydantic import ValidationError
 from shared import utils
 from shared.config import settings
 
@@ -22,30 +25,54 @@ bp = df.Blueprint()
     context_name="context"
 )  # , orchestration="VideoOrchestrator")
 def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
-    # Parse payload
-    payload: Dict[str, Any] = context.get_input()
-    logging.info(f"Input Data loaded: '{payload}'")
-    payload_obj: VideoExtractionOrchestratorRequest = (
-        VideoExtractionOrchestratorRequest.model_validate(
-            payload.get("orchestrator_workflow_properties")
-        )
+    # Define retry logic
+    retry_options = df.RetryOptions(
+        first_retry_interval_in_milliseconds=5000, max_number_of_attempts=3
     )
-    logging.info(f"Data loaded: '{payload_obj}'")
+
+    # Parse payload
+    utils.set_custom_status(
+        context=context, completion_percentage=0.0, status="Parse Payload"
+    )
+    payload: Dict[str, Any] = context.get_input()
+    logging.debug(f"Input Data loaded: '{payload}'")
+    try:
+        payload_obj: VideoExtractionOrchestratorRequest = (
+            VideoExtractionOrchestratorRequest.model_validate(
+                payload.get("orchestrator_workflow_properties")
+            )
+        )
+        logging.debug(f"Data loaded: '{payload_obj}'")
+    except ValidationError as e:
+        logging.error(f"Validation Error occured for orchestrator payload: {e}")
+        return ErrorModel(
+            error_code=10,
+            error_message="Provided input is not following the expected data model",
+            error_details=json.loads(e.json()),
+        ).model_dump()
 
     # Download Video Test
     logging.info("Downloading video")
+    utils.set_custom_status(
+        context=context, completion_percentage=5.0, status="Downloading Video"
+    )
     input_download_video: DownloadVideoRequest = DownloadVideoRequest(
         storage_domain_name=payload_obj.content_url.host,
         storage_container_name=payload_obj.content_url.path.split("/")[1],
         storage_blob_name="/".join(payload_obj.content_url.path.split("/")[2:]),
         instance_id=context.instance_id,
     )
-    result_download_video = yield context.call_activity(
-        "download_video", input_download_video
+    result_download_video = yield context.call_activity_with_retry(
+        name="download_video",
+        retry_options=retry_options,
+        input_=input_download_video,
     )
 
     # Extract video clips
     logging.info("Extract video clips")
+    utils.set_custom_status(
+        context=context, completion_percentage=20.0, status="Extracting Video Clips"
+    )
     tasks_extract_video_clip = []
     for timestamp in payload_obj.timestamps:
         input_extract_video_clip: ExtractVideoClipRequest = ExtractVideoClipRequest(
@@ -55,12 +82,19 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
             instance_id=context.instance_id,
         )
         tasks_extract_video_clip.append(
-            context.call_activity("extract_video_clip", input_extract_video_clip)
+            context.call_activity_with_retry(
+                name="extract_video_clip",
+                retry_options=retry_options,
+                input_=input_extract_video_clip,
+            )
         )
     results_extract_video_clip = yield context.task_all(tasks_extract_video_clip)
 
     # Upload video clip
     logging.info("Upload video clips")
+    utils.set_custom_status(
+        context=context, completion_percentage=70.0, status="Uploading Video Clips"
+    )
     tasks_upload_video_clips = []
     for video_clip in results_extract_video_clip:
         input_upload_video: UploadVideoRequest = UploadVideoRequest(
@@ -68,19 +102,31 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
             instance_id=context.instance_id,
         )
         tasks_upload_video_clips.append(
-            context.call_activity("upload_video", input_upload_video)
+            context.call_activity_with_retry(
+                name="upload_video",
+                retry_options=retry_options,
+                input_=input_upload_video,
+            )
         )
     results_upload_video = yield context.task_all(tasks_upload_video_clips)
 
     # Delete Video test
     logging.info("Deleting video")
+    utils.set_custom_status(
+        context=context, completion_percentage=95.0, status="Cleanup tasks"
+    )
     input_delete_video: DeleteVideoRequest = DeleteVideoRequest(
         instance_id=context.instance_id,
     )
-    _ = yield context.call_activity("delete_video", input_delete_video)
+    _ = yield context.call_activity_with_retry(
+        "delete_video", retry_options=retry_options, input_=input_delete_video
+    )
 
     # Create output
-    result = {"extracted_video_clips": results_upload_video}
+    utils.set_custom_status(
+        context=context, completion_percentage=100.0, status="Completed"
+    )
+    result = {"error_code": 0, "extracted_video_clips": results_upload_video}
     return result
 
 
