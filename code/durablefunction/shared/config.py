@@ -13,8 +13,8 @@ class Settings(BaseSettings):
         default="rgdurablefunctiona8c3.blob.core.windows.net",
         alias="STORAGE_DOMAIN_NAME",
     )
-    STORAGE_ACCOUNT_CONTAINER: str = Field(
-        default="video", alias="STORAGE_ACCOUNT_CONTAINER", min_length=3, max_length=63
+    STORAGE_CONTAINER_NAME: str = Field(
+        default="video", alias="STORAGE_CONTAINER_NAME", min_length=3, max_length=63
     )
     FUNCTION_DEFAULT_ORCHESTRATOR_NAME: str = "video_extraction_orchestrator"
 
