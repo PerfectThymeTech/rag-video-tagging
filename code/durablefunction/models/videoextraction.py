@@ -1,17 +1,26 @@
 import logging
+from datetime import datetime, time
 from typing import List
 
-from pydantic import BaseModel, Field, FilePath, HttpUrl, field_validator
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 
-@dataclass
 class Timestamp(BaseModel):
-    start: str
-    offset: str
+    start: time
+    end: time
+
+    @field_validator("start", "end", mode="before")
+    @classmethod
+    def check_time(cls, s: str):
+        try:
+            t = datetime.strptime(s, "%H:%M:%S.%f").time()
+        except ValueError:
+            raise ValueError(
+                "Provided time does not follow the expected format. Expected format '%H:%M:%S.%f' (e.g. '0:04:57.32')"
+            )
+        return t
 
 
-@dataclass
 class VideoExtractionOrchestratorRequest(BaseModel):
     content_url: HttpUrl
     timestamps: List[Timestamp]
@@ -62,23 +71,56 @@ class VideoExtractionOrchestratorRequest(BaseModel):
         return u
 
 
-@dataclass
+class ExtractVideoClipRequest(BaseModel):
+    video_file_path: str
+    start: time
+    end: time
+    instance_id: str
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return ExtractVideoClipRequest.model_validate_json(data)
+
+
 class DownloadVideoRequest(BaseModel):
     storage_domain_name: str
     storage_container_name: str = Field(min_length=3, max_length=63)
     storage_blob_name: str
     instance_id: str
 
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
 
-@dataclass
+    @staticmethod
+    def from_json(data: str):
+        return DownloadVideoRequest.model_validate_json(data)
+
+
 class UploadVideoRequest(BaseModel):
-    video_file_path: FilePath
-    storage_domain_name: str
-    storage_container_name: str = Field(min_length=3, max_length=63)
+    video_file_path: str
     instance_id: str
 
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
 
-@dataclass
+    @staticmethod
+    def from_json(data: str):
+        return UploadVideoRequest.model_validate_json(data)
+
+
 class DeleteVideoRequest(BaseModel):
-    video_file_path: FilePath
     instance_id: str
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return DeleteVideoRequest.model_validate_json(data)
