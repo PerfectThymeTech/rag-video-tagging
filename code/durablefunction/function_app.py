@@ -3,7 +3,6 @@ import json
 import azure.durable_functions as df
 import azure.functions as func
 from models.startworkflow import StartWorkflowRequest
-from pydantic import TypeAdapter
 from videoextraction.orchestration import bp as bp_videoextraction
 
 app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
