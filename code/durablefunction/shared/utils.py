@@ -4,6 +4,7 @@ import shutil
 
 import azure.durable_functions as df
 from azure.identity.aio import DefaultAzureCredential
+from azure.storage.blob import block
 from azure.storage.blob.aio import BlobServiceClient
 
 
@@ -83,6 +84,43 @@ async def upload_blob(
 
     # Return blob url
     return blob_client.url
+
+
+async def load_blob(
+    storage_domain_name: str,
+    storage_container_name: str,
+    storage_blob_name: str,
+    encoding: str = "utf-8",
+) -> str:
+    """Download file from blob storage async and return data.
+
+    storage_domain_name (str): The domain name of the storage account.
+    storage_container_name (str): The container name of the storage account.
+    storage_blob_name (str): The blob name of the storage account.
+    RETURNS (str): The data within the file.
+    """
+    logging.info(f"Start downloading file from blob storage.")
+
+    # Create credentials
+    credential = DefaultAzureCredential()
+
+    # Create client
+    blob_service_client = BlobServiceClient(
+        f"https://{storage_domain_name}", credential=credential
+    )
+    blob_client = blob_service_client.get_blob_client(
+        container=storage_container_name, blob=storage_blob_name
+    )
+
+    # Download blob
+    download_stream = await blob_client.download_blob()
+    data_bytes = await download_stream.readall()
+    data = data_bytes.decode(encoding=encoding)
+
+    logging.info(f"Finished downloading file from blob storage to memory.")
+
+    # Return data
+    return data
 
 
 def delete_directory(directory_path: str) -> bool:

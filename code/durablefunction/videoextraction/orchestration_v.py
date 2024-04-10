@@ -18,10 +18,10 @@ from pydantic import ValidationError
 from shared import utils
 from shared.config import settings
 
-bp = df.Blueprint()
+bp_videoextraction = df.Blueprint()
 
 
-@bp.orchestration_trigger(
+@bp_videoextraction.orchestration_trigger(
     context_name="context"
 )  # , orchestration="VideoOrchestrator")
 def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
@@ -130,7 +130,9 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
     return result
 
 
-@bp.activity_trigger(input_name="inputData")  # , activity="ExtractVideoClip")
+@bp_videoextraction.activity_trigger(
+    input_name="inputData"
+)  # , activity="ExtractVideoClip")
 def extract_video_clip(inputData: ExtractVideoClipRequest):
     logging.info(f"Starting video clip extraction activity")
 
@@ -170,7 +172,9 @@ def extract_video_clip(inputData: ExtractVideoClipRequest):
     return video_clip_file_path
 
 
-@bp.activity_trigger(input_name="inputData")  # , activity="DownloadVideo")
+@bp_videoextraction.activity_trigger(
+    input_name="inputData"
+)  # , activity="DownloadVideo")
 async def download_video(inputData: DownloadVideoRequest) -> str:
     logging.info(f"Starting download video activity")
 
@@ -197,7 +201,9 @@ async def download_video(inputData: DownloadVideoRequest) -> str:
     return result_download_blob
 
 
-@bp.activity_trigger(input_name="inputData")  # , activity="UploadVideo")
+@bp_videoextraction.activity_trigger(
+    input_name="inputData"
+)  # , activity="UploadVideo")
 async def upload_video(inputData: UploadVideoRequest):
     logging.info(f"Starting upload video activity")
 
@@ -217,7 +223,9 @@ async def upload_video(inputData: UploadVideoRequest):
     return result_upload_file
 
 
-@bp.activity_trigger(input_name="inputData")  # , activity="DeleteVideo")
+@bp_videoextraction.activity_trigger(
+    input_name="inputData"
+)  # , activity="DeleteVideo")
 async def delete_video(inputData: DeleteVideoRequest):
     logging.info(f"Starting delete video activity")
 

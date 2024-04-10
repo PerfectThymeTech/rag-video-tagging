@@ -5,11 +5,13 @@ import azure.durable_functions as df
 import azure.functions as func
 from models.error import ErrorModel
 from models.startworkflow import StartWorkflowRequest
+from newstagextraction.orchestration_n import bp_newstagextraction
 from pydantic import ValidationError
-from videoextraction.orchestration import bp as bp_videoextraction
+from videoextraction.orchestration_v import bp_videoextraction
 
 app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 app.register_functions(bp_videoextraction)
+app.register_functions(bp_newstagextraction)
 
 
 # An HTTP-Triggered Function with a Durable Functions Client binding
