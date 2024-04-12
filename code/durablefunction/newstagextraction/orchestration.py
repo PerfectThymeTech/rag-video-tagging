@@ -1,10 +1,14 @@
+import json
 import logging
 from typing import Any, Dict
-import json
 
-from models.newstagextraction import NewsTagExtractionOrchestratorRequest, ExtractTranscriptRequest, VideoIndexerTranscript
 import azure.durable_functions as df
 from models.error import ErrorModel
+from models.newstagextraction import (
+    ExtractTranscriptRequest,
+    NewsTagExtractionOrchestratorRequest,
+    VideoIndexerTranscript,
+)
 from pydantic import ValidationError
 from shared import utils
 
@@ -44,7 +48,9 @@ def newstag_extraction_orchestrator(context: df.DurableOrchestrationContext):
     # Extract transcript from video indexer data
     logging.info("Extract transcript from video indexer data")
     utils.set_custom_status(
-        context=context, completion_percentage=5.0, status="Extract transcript from video indexer data"
+        context=context,
+        completion_percentage=5.0,
+        status="Extract transcript from video indexer data",
     )
     input_extract_transcript: ExtractTranscriptRequest = ExtractTranscriptRequest(
         storage_domain_name=payload_obj.content_url.host,
@@ -52,10 +58,12 @@ def newstag_extraction_orchestrator(context: df.DurableOrchestrationContext):
         storage_blob_name="/".join(payload_obj.content_url.path.split("/")[2:]),
         instance_id=context.instance_id,
     )
-    result_extract_transcript: VideoIndexerTranscript = yield context.call_activity_with_retry(
-        name="extract_transcript",
-        retry_options=retry_options,
-        input_=input_extract_transcript,
+    result_extract_transcript: VideoIndexerTranscript = (
+        yield context.call_activity_with_retry(
+            name="extract_transcript",
+            retry_options=retry_options,
+            input_=input_extract_transcript,
+        )
     )
 
     # TODO: Interact with GPT3 or GPT4
@@ -70,7 +78,9 @@ def newstag_extraction_orchestrator(context: df.DurableOrchestrationContext):
 
 
 @bp.activity_trigger(input_name="inputData")  # , activity="ExtractTranscript")
-async def extract_transcript(inputData: ExtractTranscriptRequest) -> VideoIndexerTranscript:
+async def extract_transcript(
+    inputData: ExtractTranscriptRequest,
+) -> VideoIndexerTranscript:
     logging.info(f"Starting transcript extraction activity")
 
     # Get json from blob storage
@@ -85,17 +95,20 @@ async def extract_transcript(inputData: ExtractTranscriptRequest) -> VideoIndexe
 
     # Generate Transcript fom JSON
     transcript_text_list = []
-    transcript = data_json.get("videos", {"insights": {"transcript": []}}).get("insights", {"transcript": []}).get("transcript", [])
+    transcript = (
+        data_json.get("videos", {"insights": {"transcript": []}})
+        .get("insights", {"transcript": []})
+        .get("transcript", [])
+    )
     for item in transcript:
         text = item.get("text")
         transcript_text_list.append(text)
-    
+
     transcript_text_list_cleaned = [item for item in transcript_text_list if item]
     transcript_text = " ".join(transcript_text_list_cleaned).strip()
 
     # Return video indexer transcript object
     video_indexer_transcript: VideoIndexerTranscript = VideoIndexerTranscript(
-        transcript_text=transcript_text,
-        transcript=transcript
+        transcript_text=transcript_text, transcript=transcript
     )
     return video_indexer_transcript
