@@ -1,0 +1,57 @@
+name: Function App Deployment
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.py"
+      - "code/function/**"
+      - "tests/**"
+      - "requirements.txt"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**.py"
+      - "code/function/**"
+      - "tests/**"
+      - "requirements.txt"
+
+jobs:
+  # function_test:
+  #   uses: ./.github/workflows/_functionAppTestTemplate.yml
+  #   name: "Function App Test"
+  #   with:
+  #     python_version: "3.11"
+  #     function_directory: "./code/function"
+
+  # function_container:
+  #   uses: ./.github/workflows/_containerTemplate.yml
+  #   name: "Function App Container"
+  #   needs: [function_test]
+  #   with:
+  #     environment: "dev"
+  #     working_directory: "./code/function"
+  #     registry_uri: "ghcr.io"
+  #     image_namespace_name: "PerfectThymeTech"
+  #     image_name: "AzureFunctionPython"
+  #   secrets:
+  #     USER_NAME: ${{ github.actor }}
+  #     PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+  function_deploy:
+    uses: ./.github/workflows/_functionAppDeployTemplate.yml
+    name: "Function App Deploy"
+    # needs: [function_test]
+    if: github.event_name == 'push' || github.event_name == 'release'
+    with:
+      environment: "dev"
+      python_version: "3.11"
+      function_directory: "./code/durablefunction"
+      function_name: "myfunctiontst"
+      tenant_id: "572cf1ec-3f90-49a2-896f-ab2fa36ca0d3"
+      subscription_id: "be25820a-df86-4794-9e95-6a45cd5c0941"
+    secrets:
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
