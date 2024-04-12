@@ -5,7 +5,7 @@ on:
       - main
     paths:
       - "**.py"
-      - "code/function/**"
+      - "code/durablefunction/**"
       - "tests/**"
       - "requirements.txt"
 
@@ -14,7 +14,7 @@ on:
       - main
     paths:
       - "**.py"
-      - "code/function/**"
+      - "code/durablefunction/**"
       - "tests/**"
       - "requirements.txt"
 
