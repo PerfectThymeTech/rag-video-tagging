@@ -114,6 +114,7 @@ async def extract_transcript(
 
     transcript_text_list_cleaned = [item for item in transcript_text_list if item]
     transcript_text = " ".join(transcript_text_list_cleaned).strip()
+    logging.info(f"Loaded transcript text: {transcript_text}")
 
     # Return video indexer transcript object
     video_indexer_transcript: VideoIndexerTranscript = VideoIndexerTranscript(
