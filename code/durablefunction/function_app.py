@@ -7,9 +7,11 @@ from models.error import ErrorModel
 from models.startworkflow import StartWorkflowRequest
 from pydantic import ValidationError
 from videoextraction.orchestration import bp as bp_videoextraction
+from newstagextraction.orchestration import bp as bp_newstagextraction
 
 app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 app.register_functions(bp_videoextraction)
+app.register_functions(bp_newstagextraction)
 
 
 # An HTTP-Triggered Function with a Durable Functions Client binding
