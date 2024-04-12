@@ -33,7 +33,7 @@ class VideoIndexerTranscriptItem(BaseModel):
     id: int
     text: str
     confidence: float
-    speaker_id: int = Field(alias="speakerId")
+    speaker_id: int = Field(default=None, alias="speakerId")
     language: str
     instances: List[VideoIndexerTranscriptInstance]
 

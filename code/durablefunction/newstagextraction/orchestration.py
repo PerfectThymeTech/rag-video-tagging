@@ -88,6 +88,7 @@ async def extract_transcript(
         storage_domain_name=inputData.storage_domain_name,
         storage_container_name=inputData.storage_container_name,
         storage_blob_name=inputData.storage_blob_name,
+        encoding="utf-8-sig",
     )
     logging.info(f"Loaded data from storage: {data}")
     data_json = json.loads(data)
@@ -95,14 +96,21 @@ async def extract_transcript(
 
     # Generate Transcript fom JSON
     transcript_text_list = []
-    transcript = (
-        data_json.get("videos", {"insights": {"transcript": []}})
-        .get("insights", {"transcript": []})
-        .get("transcript", [])
-    )
+    transcript_list = []
+    try:
+        transcript = (
+            data_json.get("videos", [{"insights": {"transcript": []}}])
+            .pop(0)
+            .get("insights", {"transcript": []})
+            .get("transcript", [])
+        )
+    except IndexError:
+        transcript = []
     for item in transcript:
-        text = item.get("text")
-        transcript_text_list.append(text)
+        if item.get("speaker", None):
+            text = item.get("text")
+            transcript_text_list.append(text)
+            transcript_list.append(item)
 
     transcript_text_list_cleaned = [item for item in transcript_text_list if item]
     transcript_text = " ".join(transcript_text_list_cleaned).strip()
