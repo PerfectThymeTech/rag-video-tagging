@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 class OrchestratorWorkflowEnum(str, Enum):
     VIDEOEXTRACTION = "video_extraction_orchestrator"
+    NEWSTAGEXTRACTION = "newstag_extraction_orchestrator"
 
 
 class StartWorkflowRequest(BaseModel):
