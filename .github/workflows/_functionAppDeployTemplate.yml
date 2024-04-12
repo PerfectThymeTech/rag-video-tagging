@@ -58,7 +58,7 @@ jobs:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
           cache-dependency-path: |
-            code/function/requirements.txt
+            ${{ inputs.function_directory }}/requirements.txt
 
       # Install Function Dependencies
       - name: Resolve Function Dependencies
