@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict
 
+import azure.functions as func
 import azure.durable_functions as df
 from models.error import ErrorModel
 from models.videoextraction import (
@@ -18,10 +19,36 @@ from pydantic import ValidationError
 from shared import utils
 from shared.config import settings
 
-bp_videoextraction = df.Blueprint()
+bp = df.Blueprint()
 
 
-@bp_videoextraction.orchestration_trigger(
+@bp.route(route="startVideoExtraction")
+@bp.durable_client_input(client_name="client")
+async def start_newstagextraction(req: func.HttpRequest, client: df.DurableOrchestrationClient):
+    try:
+        # Parse body
+        payload = json.loads(req.get_body().decode())
+        payload_obj: VideoExtractionOrchestratorRequest = VideoExtractionOrchestratorRequest.model_validate(payload)
+
+        # Start orchestrator
+        instance_id = await client.start_new(
+            "video_extraction_orchestrator", client_input=payload
+        )
+        response = client.create_check_status_response(req, instance_id)
+    except ValidationError as e:
+        logging.error(f"Validation Error occured for news tag extraction payload: {e}")
+        return func.HttpResponse(
+            body=ErrorModel(
+                error_code=10,
+                error_message="Provided input is not following the expected data model",
+                error_details=json.loads(e.json()),
+            ).model_dump_json(),
+            status_code=422,
+        )
+    return response
+
+
+@bp.orchestration_trigger(
     context_name="context"
 )  # , orchestration="VideoOrchestrator")
 def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
@@ -39,7 +66,8 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
     try:
         payload_obj: VideoExtractionOrchestratorRequest = (
             VideoExtractionOrchestratorRequest.model_validate(
-                payload.get("orchestrator_workflow_properties")
+                # payload.get("orchestrator_workflow_properties")
+                payload
             )
         )
         logging.debug(f"Data loaded: '{payload_obj}'")
@@ -130,7 +158,7 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
     return result
 
 
-@bp_videoextraction.activity_trigger(
+@bp.activity_trigger(
     input_name="inputData"
 )  # , activity="ExtractVideoClip")
 def extract_video_clip(inputData: ExtractVideoClipRequest):
@@ -172,7 +200,7 @@ def extract_video_clip(inputData: ExtractVideoClipRequest):
     return video_clip_file_path
 
 
-@bp_videoextraction.activity_trigger(
+@bp.activity_trigger(
     input_name="inputData"
 )  # , activity="DownloadVideo")
 async def download_video(inputData: DownloadVideoRequest) -> str:
@@ -201,7 +229,7 @@ async def download_video(inputData: DownloadVideoRequest) -> str:
     return result_download_blob
 
 
-@bp_videoextraction.activity_trigger(
+@bp.activity_trigger(
     input_name="inputData"
 )  # , activity="UploadVideo")
 async def upload_video(inputData: UploadVideoRequest):
@@ -223,7 +251,7 @@ async def upload_video(inputData: UploadVideoRequest):
     return result_upload_file
 
 
-@bp_videoextraction.activity_trigger(
+@bp.activity_trigger(
     input_name="inputData"
 )  # , activity="DeleteVideo")
 async def delete_video(inputData: DeleteVideoRequest):
