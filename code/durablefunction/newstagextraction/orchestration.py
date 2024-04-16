@@ -121,3 +121,8 @@ async def extract_transcript(
         transcript_text=transcript_text, transcript=transcript
     )
     return video_indexer_transcript
+
+
+@bp.activity_trigger(input_name="inputData")  # , activity="QueryLlm")
+async def query_llm(inputData: str) -> str:
+    return ""
