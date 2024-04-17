@@ -211,14 +211,14 @@ class VideoExtractionOrchestratorRequest(BaseModel):
                 f"Please provide a valid blob storage url without any url fragments. Provided value '{u.fragment}'."
             )
         elif u.username:
-            logging.error(f"Username provided in content url: {u.username}")
+            logging.error(f"Username provided in content url: [REDACTED]")
             raise ValueError(
-                f"Please provide a valid blob storage url without a username. Provided value '{u.username}'."
+                f"Please provide a valid blob storage url without a username. Provided value '[REDACTED]'."
             )
         elif u.password:
-            logging.error(f"Password provided in content url: {u.password}")
+            logging.error(f"Password provided in content url: [REDACTED]")
             raise ValueError(
-                f"Please provide a valid blob storage url without a password. Provided value '{u.password}'."
+                f"Please provide a valid blob storage url without a password. Provided value '[REDACTED]'."
             )
         return u
 
