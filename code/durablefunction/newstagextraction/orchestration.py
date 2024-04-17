@@ -53,9 +53,11 @@ def newstag_extraction_orchestrator(context: df.DurableOrchestrationContext):
         status="Extract transcript from video indexer data",
     )
     input_extract_transcript: ExtractTranscriptRequest = ExtractTranscriptRequest(
-        storage_domain_name=payload_obj.content_url.host,
-        storage_container_name=payload_obj.content_url.path.split("/")[1],
-        storage_blob_name="/".join(payload_obj.content_url.path.split("/")[2:]),
+        storage_domain_name=payload_obj.content_url_videoindexer.host,
+        storage_container_name=payload_obj.content_url_videoindexer.path.split("/")[1],
+        storage_blob_name="/".join(
+            payload_obj.content_url_videoindexer.path.split("/")[2:]
+        ),
         instance_id=context.instance_id,
     )
     result_extract_transcript: VideoIndexerTranscript = (
@@ -93,6 +95,8 @@ async def extract_transcript(
     logging.info(f"Loaded data from storage: {data}")
     data_json = json.loads(data)
     logging.info(f"Loaded json data from storage: {data_json}")
+
+    # TODO: Handle errors
 
     # Generate Transcript fom JSON
     transcript_text_list = []
