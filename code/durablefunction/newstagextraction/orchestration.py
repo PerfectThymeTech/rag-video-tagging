@@ -5,12 +5,16 @@ from typing import Any, Dict
 import azure.durable_functions as df
 from models.error import ErrorModel
 from models.newstagextraction import (
-    ExtractTranscriptRequest,
+    InvokeLlmRequest,
+    InvokeLlmResponse,
+    LoadVideoindexerContentRequest,
+    LoadVideoindexerContentResponse,
     NewsTagExtractionOrchestratorRequest,
-    VideoIndexerTranscript,
 )
+from newstagextraction.llm import LlmInteractor
 from pydantic import ValidationError
 from shared import utils
+from shared.config import settings
 
 bp = df.Blueprint()
 
@@ -52,37 +56,58 @@ def newstag_extraction_orchestrator(context: df.DurableOrchestrationContext):
         completion_percentage=5.0,
         status="Extract transcript from video indexer data",
     )
-    input_extract_transcript: ExtractTranscriptRequest = ExtractTranscriptRequest(
-        storage_domain_name=payload_obj.content_url_videoindexer.host,
-        storage_container_name=payload_obj.content_url_videoindexer.path.split("/")[1],
-        storage_blob_name="/".join(
-            payload_obj.content_url_videoindexer.path.split("/")[2:]
-        ),
-        instance_id=context.instance_id,
+    input_load_videoindexer_content: LoadVideoindexerContentRequest = (
+        LoadVideoindexerContentRequest(
+            storage_domain_name=payload_obj.content_url_videoindexer.host,
+            storage_container_name=payload_obj.content_url_videoindexer.path.split("/")[
+                1
+            ],
+            storage_blob_name="/".join(
+                payload_obj.content_url_videoindexer.path.split("/")[2:]
+            ),
+            instance_id=context.instance_id,
+        )
     )
-    result_extract_transcript: VideoIndexerTranscript = (
+    result_load_videoindexer_content: LoadVideoindexerContentResponse = (
         yield context.call_activity_with_retry(
-            name="extract_transcript",
+            name="load_videoindexer_content",
             retry_options=retry_options,
-            input_=input_extract_transcript,
+            input_=input_load_videoindexer_content,
         )
     )
 
-    # TODO: Interact with GPT3 or GPT4
+    # Invoke LLM to detect news scenes
+    logging.info("Invoke LLM to detect news scenes")
+    utils.set_custom_status(
+        context=context,
+        completion_percentage=15.0,
+        status="Detect scenes using Azure Open AI",
+    )
+    input_invoke_llm: InvokeLlmRequest = InvokeLlmRequest(
+        content_text=result_load_videoindexer_content.transcript_text,
+        content_details="This is a tv news show.",
+    )
+    result_invoke_llm: InvokeLlmResponse = yield context.call_activity_with_retry(
+        name="invoke_llm",
+        retry_options=retry_options,
+        input_=input_invoke_llm,
+    )
+
     # TODO: Generate timestamps
+    # TODO: Get scene images from Video Indexer
 
     # Create output
     utils.set_custom_status(
         context=context, completion_percentage=100.0, status="Completed"
     )
-    result = {"error_code": 0, "text": ""}
+    result = {"error_code": 0, "text": result_invoke_llm.model_dump()}
     return result
 
 
 @bp.activity_trigger(input_name="inputData")  # , activity="ExtractTranscript")
-async def extract_transcript(
-    inputData: ExtractTranscriptRequest,
-) -> VideoIndexerTranscript:
+async def load_videoindexer_content(
+    inputData: LoadVideoindexerContentRequest,
+) -> LoadVideoindexerContentResponse:
     logging.info(f"Starting transcript extraction activity")
 
     # Get json from blob storage
@@ -108,25 +133,47 @@ async def extract_transcript(
             .get("insights", {"transcript": []})
             .get("transcript", [])
         )
-    except IndexError:
+    except IndexError as e:
+        logging.error(
+            f"Index error when loading the video indexer data, so setting empty transcript: '{e}'"
+        )
         transcript = []
+
+    # Filter items in transcript
     for item in transcript:
-        if item.get("speaker", None):
+        if item.get("speakerId", None):
             text = item.get("text")
             transcript_text_list.append(text)
             transcript_list.append(item)
 
     transcript_text_list_cleaned = [item for item in transcript_text_list if item]
     transcript_text = " ".join(transcript_text_list_cleaned).strip()
+
+    # Generate response: video indexer transcript object
     logging.info(f"Loaded transcript text: {transcript_text}")
-
-    # Return video indexer transcript object
-    video_indexer_transcript: VideoIndexerTranscript = VideoIndexerTranscript(
-        transcript_text=transcript_text, transcript=transcript
+    logging.info(f"Loaded transcript items: {len(transcript_list)}")
+    response: LoadVideoindexerContentResponse = LoadVideoindexerContentResponse(
+        transcript_text=transcript_text, transcript=transcript_list
     )
-    return video_indexer_transcript
+    return response
 
 
-@bp.activity_trigger(input_name="inputData")  # , activity="QueryLlm")
-async def query_llm(inputData: str) -> str:
-    return ""
+@bp.activity_trigger(input_name="inputData")  # , activity="InvokeLlm")
+async def invoke_llm(inputData: InvokeLlmRequest) -> InvokeLlmResponse:
+    # Invoke llm
+    logging.info("Starting to invoke llm")
+    llm_ineractor = LlmInteractor(
+        azure_open_ai_base_url=settings.AZURE_OPEN_AI_BASE_URL,
+        azure_open_ai_api_version=settings.AZURE_OPEN_AI_API_VERSION,
+        azure_open_ai_deployment_name=settings.AZURE_OPEN_AI_DEPLOYMENT_NAME,
+    )
+    llm_result: Dict[Any] = llm_ineractor.invoke_llm_chain(
+        news_content=inputData.content_text,
+        news_show_details=inputData.content_details,
+    )
+    logging.info(f"Type: {type(llm_result)}")
+    logging.info(f"LLM response: {json.dumps(llm_result)}")
+
+    # Generate response
+    response: InvokeLlmResponse = InvokeLlmResponse(subsections=llm_result)
+    return response
