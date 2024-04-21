@@ -17,9 +17,9 @@ class Settings(BaseSettings):
         default="video", alias="STORAGE_CONTAINER_NAME", min_length=3, max_length=63
     )
     FUNCTION_DEFAULT_ORCHESTRATOR_NAME: str = "video_extraction_orchestrator"
-    AZURE_OPEN_AI_BASE_URL: str  # = "https://aoai-swedencentral-mabuss.openai.azure.com/"
-    AZURE_OPEN_AI_API_VERSION: str = "2023-05-15"
-    AZURE_OPEN_AI_DEPLOYMENT_NAME: str  # = "gpt-4-32k"
+    AZURE_OPEN_AI_BASE_URL: str = "https://durable-aoai001.openai.azure.com/"
+    AZURE_OPEN_AI_API_VERSION: str = "2024-02-15-preview"
+    AZURE_OPEN_AI_DEPLOYMENT_NAME: str = "gpt-4"
 
 
 settings = Settings()
