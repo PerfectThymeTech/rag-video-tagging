@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, RootModel, field_validator
 
 
 class NewsTagExtractionOrchestratorRequest(BaseModel):
@@ -87,7 +87,7 @@ class VideoIndexerTranscriptItem(BaseModel):
 class LoadVideoindexerContentResponse(BaseModel):
     transcript_text: str
     transcript: List[VideoIndexerTranscriptItem]
-    
+
     @staticmethod
     def to_json(obj) -> str:
         return obj.model_dump_json()
@@ -98,9 +98,9 @@ class LoadVideoindexerContentResponse(BaseModel):
 
 
 class InvokeLlmRequest(BaseModel):
-    transcript_text: str
-    transcript_details: str
-    
+    content_text: str
+    content_details: str
+
     @staticmethod
     def to_json(obj) -> str:
         return obj.model_dump_json()
@@ -108,3 +108,45 @@ class InvokeLlmRequest(BaseModel):
     @staticmethod
     def from_json(data: str):
         return InvokeLlmRequest.model_validate_json(data)
+
+
+class LlmResponseItem(BaseModel):
+    title: str = Field(description="title of the subsection")
+    tags: List[str] = Field(description="tags of the subsection")
+    score: int = Field(description="score of the subsection")
+    start: str = Field(description="start of the text of the subsection")
+    end: str = Field(description="end of the text of the subsection")
+
+
+class InvokeLlmResponse(BaseModel):
+    subsections: List[LlmResponseItem] = Field(
+        description="list of items describing the subsections"
+    )
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return InvokeLlmResponse.model_validate_json(data)
+
+
+# class InvokeLlmResponse(RootModel):
+#     root: List[LlmResponseItem] = Field(
+#         description="list of items describing the subsections"
+#     )
+
+#     def __iter__(self):
+#         return iter(self.root)
+
+#     def __getitem__(self, item):
+#         return self.root[item]
+
+#     @staticmethod
+#     def to_json(obj) -> str:
+#         return obj.model_dump_json()
+
+#     @staticmethod
+#     def from_json(data: str):
+#         return InvokeLlmResponse.model_validate_json(data)
