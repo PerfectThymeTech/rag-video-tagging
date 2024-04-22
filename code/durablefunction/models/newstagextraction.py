@@ -118,30 +118,10 @@ class LlmResponseItem(BaseModel):
     end: str = Field(description="end of the text of the subsection")
 
 
-class InvokeLlmResponse(BaseModel):
-    subsections: List[LlmResponseItem] = Field(
-        description="list of items describing the subsections"
-    )
-
-    @staticmethod
-    def to_json(obj) -> str:
-        return obj.model_dump_json()
-
-    @staticmethod
-    def from_json(data: str):
-        return InvokeLlmResponse.model_validate_json(data)
-
-
-# class InvokeLlmResponse(RootModel):
-#     root: List[LlmResponseItem] = Field(
+# class InvokeLlmResponse(BaseModel):
+#     subsections: List[LlmResponseItem] = Field(
 #         description="list of items describing the subsections"
 #     )
-
-#     def __iter__(self):
-#         return iter(self.root)
-
-#     def __getitem__(self, item):
-#         return self.root[item]
 
 #     @staticmethod
 #     def to_json(obj) -> str:
@@ -150,3 +130,23 @@ class InvokeLlmResponse(BaseModel):
 #     @staticmethod
 #     def from_json(data: str):
 #         return InvokeLlmResponse.model_validate_json(data)
+
+
+class InvokeLlmResponse(RootModel):
+    root: List[LlmResponseItem] = Field(
+        description="list of items describing the subsections"
+    )
+
+    def __iter__(self):
+        return iter(self.root)
+
+    def __getitem__(self, item):
+        return self.root[item]
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return InvokeLlmResponse.model_validate_json(data)
