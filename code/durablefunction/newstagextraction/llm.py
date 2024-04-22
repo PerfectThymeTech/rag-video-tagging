@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import AzureChatOpenAI
-from models.newstagextraction import InvokeLlmResponse
+from models.newstagextraction import InvokeLlmResponse, LlmResponseItem
 
 
 class LlmMessages:
@@ -14,10 +14,10 @@ class LlmMessages:
     You extract subsections from the provided news content and generate a title for each subsection.
     For each subsection you provide a score between 0 and 10 indicating how good the defined tags match the content of the subsection. 0 indicates that the tags don't match the content, and 10 means that the tags are a perfect match.
     You must include the start and end of the original text for each subsection in the response. The text snippet describing the beginning and end should include 5 words.
-    You add tags to each subsection. Samples for tags are: sports, weather, international news, national news, politics, technology, celebrity, other. You add additional tags based on the content of each subsection.
+    You add tags to each subsection. Samples for tags are: sports, weather, international news, national news, politics, crime, technology, celebrity, other. You add additional tags based on the content of each subsection.
 
-    You always respond with the following JSON structure:
-    {format_instructions}
+    Here is a sample JSON response:
+    {format_sample}
     """
     USER_MESSAGE: str = """
     News Content: "{news_content}"
@@ -55,7 +55,8 @@ class LlmInteractor:
             ],
         )
         prompt.input_variables = [
-            "format_instructions",
+            # "format_instructions",
+            "format_sample",
             "news_content",
             "news_show_details",
         ]
@@ -82,10 +83,33 @@ class LlmInteractor:
         output_parser = JsonOutputParser(pydantic_object=InvokeLlmResponse)
 
         # Insert partial into prompt
-        prompt_partial = prompt.partial(
-            format_instructions=output_parser.get_format_instructions()
+        item1 = LlmResponseItem(
+            title="Title of the first subsection",
+            tags=["tag-1", "tag-2", "tag-3"],
+            score=9,
+            start="Start of the first subsection",
+            end="End of the first subsection",
         )
-        logging.info(f"Prompt: {prompt.json()}")
+        item2 = LlmResponseItem(
+            title="Title of the second subsection",
+            tags=["tag-1", "tag-2", "tag-3"],
+            score=7,
+            start="Start of the second subsection",
+            end="End of the second subsection",
+        )
+        item3 = LlmResponseItem(
+            title="Title of the third subsection",
+            tags=["tag-1", "tag-2", "tag-3"],
+            score=8,
+            start="Start of the third subsection",
+            end="End of the third subsection",
+        )
+        format_sample = InvokeLlmResponse(root=[item1, item2, item3])
+        prompt_partial = prompt.partial(
+            # format_instructions=output_parser.get_format_instructions(),
+            format_sample=format_sample.model_dump_json(),
+        )
+        logging.debug(f"Prompt: {prompt.json()}")
 
         # Create chain
         logging.debug("Creating the llm chain")
