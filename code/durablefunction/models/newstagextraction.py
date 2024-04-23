@@ -100,6 +100,7 @@ class LoadVideoindexerContentResponse(BaseModel):
 class InvokeLlmRequest(BaseModel):
     content_text: str
     content_details: str
+    instance_id: str
 
     @staticmethod
     def to_json(obj) -> str:
@@ -117,19 +118,11 @@ class LlmResponseItem(BaseModel):
     start: str = Field(description="start of the text of the subsection")
     end: str = Field(description="end of the text of the subsection")
 
-
-# class InvokeLlmResponse(BaseModel):
-#     subsections: List[LlmResponseItem] = Field(
-#         description="list of items describing the subsections"
-#     )
-
-#     @staticmethod
-#     def to_json(obj) -> str:
-#         return obj.model_dump_json()
-
-#     @staticmethod
-#     def from_json(data: str):
-#         return InvokeLlmResponse.model_validate_json(data)
+    def get_item_text(self, start: bool = True) -> str:
+        if start:
+            return self.start
+        else:
+            return self.end
 
 
 class InvokeLlmResponse(RootModel):
@@ -150,3 +143,37 @@ class InvokeLlmResponse(RootModel):
     @staticmethod
     def from_json(data: str):
         return InvokeLlmResponse.model_validate_json(data)
+
+
+class ComputeTimestampsRequest(BaseModel):
+    result_video_indexer: List[VideoIndexerTranscriptItem]
+    result_llm: List[LlmResponseItem]
+    instance_id: str
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return ComputeTimestampsRequest.model_validate_json(data)
+
+
+class ComputeTimestampsItem(BaseModel):
+    title: str
+    tags: List[str]
+    score: int
+    start_time: str
+    end_time: str
+
+
+class ComputeTimestampsResponse(RootModel):
+    root: List[ComputeTimestampsItem]
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return ComputeTimestampsResponse.model_validate_json(data)
