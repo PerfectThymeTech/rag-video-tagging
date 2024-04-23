@@ -12,8 +12,9 @@ class LlmMessages:
     SYSTEM_MESSAGE: str = """
     You are a world class assistant for summarizing news content.
     You extract subsections from the provided news content and generate a title for each subsection.
+    Each subsection consists of at least 10 words.
     For each subsection you provide a score between 0 and 10 indicating how good the defined tags match the content of the subsection. 0 indicates that the tags don't match the content, and 10 means that the tags are a perfect match.
-    You must include the start and end of the original text for each subsection in the response. The text snippet describing the beginning and end should include 5 words.
+    You must include the start and end of the original text for each subsection in the response. The text snippet describing the beginning and end should include 5 words as well as any punctuation.
     You add tags to each subsection. Samples for tags are: sports, weather, international news, national news, politics, crime, technology, celebrity, other. You add additional tags based on the content of each subsection.
 
     Here is a sample JSON response:
@@ -55,7 +56,6 @@ class LlmInteractor:
             ],
         )
         prompt.input_variables = [
-            # "format_instructions",
             "format_sample",
             "news_content",
             "news_show_details",
@@ -88,25 +88,24 @@ class LlmInteractor:
             tags=["tag-1", "tag-2", "tag-3"],
             score=9,
             start="Start of the first subsection",
-            end="End of the first subsection",
+            end="End of the first subsection.",
         )
         item2 = LlmResponseItem(
             title="Title of the second subsection",
             tags=["tag-1", "tag-2", "tag-3"],
             score=7,
             start="Start of the second subsection",
-            end="End of the second subsection",
+            end="End of the second subsection!",
         )
         item3 = LlmResponseItem(
             title="Title of the third subsection",
             tags=["tag-1", "tag-2", "tag-3"],
             score=8,
             start="Start of the third subsection",
-            end="End of the third subsection",
+            end="End of the third subsection?",
         )
         format_sample = InvokeLlmResponse(root=[item1, item2, item3])
         prompt_partial = prompt.partial(
-            # format_instructions=output_parser.get_format_instructions(),
             format_sample=format_sample.model_dump_json(),
         )
         logging.debug(f"Prompt: {prompt.json()}")
