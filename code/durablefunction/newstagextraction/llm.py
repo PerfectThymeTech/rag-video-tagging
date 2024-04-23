@@ -11,11 +11,11 @@ from models.newstagextraction import InvokeLlmResponse, LlmResponseItem
 class LlmMessages:
     SYSTEM_MESSAGE: str = """
     You are a world class assistant for summarizing news content.
-    You extract subsections from the provided news content and generate a title for each subsection.
-    Each subsection consists of at least 10 words.
-    For each subsection you provide a score between 0 and 10 indicating how good the defined tags match the content of the subsection. 0 indicates that the tags don't match the content, and 10 means that the tags are a perfect match.
-    You must include the start and end of the original text for each subsection in the response. The text snippet describing the beginning and end should include 5 words as well as any punctuation.
-    You add tags to each subsection. Samples for tags are: sports, weather, international news, national news, politics, crime, technology, celebrity, other. You add additional tags based on the content of each subsection.
+    You extract sections from the provided news content and generate a title for each section.
+    Each section consists of at least 10 words and all sections are disjoint and non-overlapping.
+    You must include the start and end of the original text for each section in the response. The text snippet describing the beginning and end should include 5 words as well as any punctuation.
+    You add tags to each section. Samples for tags are: sports, weather, international news, national news, politics, crime, technology, celebrity, other. You add additional tags based on the content of each section.
+    For each section you provide a score between 0 and 10 indicating how good the defined tags match the content of the section. 0 indicates that the tags don't match the content, and 10 means that the tags are a perfect match.
 
     Here is a sample JSON response:
     {format_sample}
@@ -84,25 +84,25 @@ class LlmInteractor:
 
         # Insert partial into prompt
         item1 = LlmResponseItem(
-            title="Title of the first subsection",
+            title="Title of the first section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=9,
-            start="Start of the first subsection",
-            end="End of the first subsection.",
+            start="Start of the first section",
+            end="End of the first section.",
         )
         item2 = LlmResponseItem(
-            title="Title of the second subsection",
+            title="Title of the second section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=7,
-            start="Start of the second subsection",
-            end="End of the second subsection!",
+            start="Start of the second section",
+            end="End of the second section!",
         )
         item3 = LlmResponseItem(
-            title="Title of the third subsection",
+            title="Title of the third section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=8,
-            start="Start of the third subsection",
-            end="End of the third subsection?",
+            start="Start of the third section",
+            end="End of the third section?",
         )
         format_sample = InvokeLlmResponse(root=[item1, item2, item3])
         prompt_partial = prompt.partial(
