@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+from urllib.parse import unquote
 
 import azure.durable_functions as df
 from azure.identity.aio import DefaultAzureCredential
@@ -23,6 +24,12 @@ async def download_blob(
     """
     logging.info(f"Start downloading file from blob storage to '{file_path}'.")
 
+    # Preprocess storage blob name
+    storage_blob_name_cleansed = unquote(storage_blob_name)
+    logging.debug(
+        f"Storage Details: Domain='{storage_domain_name}', Container='{storage_container_name}', Blob='{storage_blob_name_cleansed}'."
+    )
+
     # Create credentials
     credential = DefaultAzureCredential()
 
@@ -31,7 +38,7 @@ async def download_blob(
         f"https://{storage_domain_name}", credential=credential
     )
     blob_client = blob_service_client.get_blob_client(
-        container=storage_container_name, blob=storage_blob_name
+        container=storage_container_name, blob=storage_blob_name_cleansed
     )
 
     # Download blob
@@ -62,6 +69,12 @@ async def upload_blob(
     """
     logging.info(f"Start uploading file '{file_path}' to blob storage.")
 
+    # Preprocess storage blob name
+    storage_blob_name_cleansed = unquote(storage_blob_name)
+    logging.debug(
+        f"Storage Details: Domain='{storage_domain_name}', Container='{storage_container_name}', Blob='{storage_blob_name_cleansed}'."
+    )
+
     # Create credentials
     credential = DefaultAzureCredential()
 
@@ -76,7 +89,7 @@ async def upload_blob(
     # Upload blob
     with open(file=file_path, mode="rb") as data:
         blob_client = await container_client.upload_blob(
-            name=storage_blob_name, data=data, overwrite=True
+            name=storage_blob_name_cleansed, data=data, overwrite=True
         )
 
     logging.info(f"Finished uploading file '{file_path}' to blob storage.")
@@ -100,6 +113,12 @@ async def load_blob(
     """
     logging.info(f"Start downloading file from blob storage.")
 
+    # Preprocess storage blob name
+    storage_blob_name_cleansed = unquote(storage_blob_name)
+    logging.debug(
+        f"Storage Details: Domain='{storage_domain_name}', Container='{storage_container_name}', Blob='{storage_blob_name_cleansed}'."
+    )
+
     # Create credentials
     credential = DefaultAzureCredential()
 
@@ -108,7 +127,7 @@ async def load_blob(
         f"https://{storage_domain_name}", credential=credential
     )
     blob_client = blob_service_client.get_blob_client(
-        container=storage_container_name, blob=storage_blob_name
+        container=storage_container_name, blob=storage_blob_name_cleansed
     )
 
     # Download blob
