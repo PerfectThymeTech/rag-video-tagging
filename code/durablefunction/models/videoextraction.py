@@ -21,6 +21,7 @@ class LoadOpenaiContentRequest(BaseModel):
 
 
 class VideoTimestamp(BaseModel):
+    id: int
     start_time: time
     end_time: time
 
@@ -66,6 +67,7 @@ class LoadVideoContentResponse(BaseModel):
 
 class ExtractVideoClipRequest(BaseModel):
     video_file_path: str
+    id: int
     start_time: time
     end_time: time
     instance_id: str
@@ -81,6 +83,7 @@ class ExtractVideoClipRequest(BaseModel):
 
 class ExtractVideoClipResponse(BaseModel):
     video_clip_file_path: str
+    id: int
     start_time: time
     end_time: time
 
@@ -95,6 +98,7 @@ class ExtractVideoClipResponse(BaseModel):
 
 class UploadVideoRequest(BaseModel):
     video_file_path: str
+    id: int
     start_time: time
     end_time: time
     instance_id: str
@@ -110,6 +114,7 @@ class UploadVideoRequest(BaseModel):
 
 class UploadVideoResponse(BaseModel):
     content_url_videoclip: str
+    id: int
     start_time: time
     end_time: time
 

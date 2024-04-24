@@ -112,6 +112,7 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
         )
         input_extract_video_clip: ExtractVideoClipRequest = ExtractVideoClipRequest(
             video_file_path=result_load_video_content.video_file_path,
+            id=video_timestamp.id,
             start_time=video_timestamp.start_time,
             end_time=video_timestamp.end_time,
             instance_id=context.instance_id,
@@ -130,6 +131,7 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
         )
         input_upload_video: UploadVideoRequest = UploadVideoRequest(
             video_file_path=result_extract_video_clip.video_clip_file_path,
+            id=result_extract_video_clip.id,
             start_time=result_extract_video_clip.start_time,
             end_time=result_extract_video_clip.end_time,
             instance_id=context.instance_id,
@@ -203,6 +205,7 @@ async def load_openai_content(
     response: LoadOpenaiContentResponse = LoadOpenaiContentResponse(video_timestamps=[])
     for scene in data_obj.scenes:
         video_timestamp = VideoTimestamp(
+            id=scene.id,
             start_time=scene.start_time,
             end_time=scene.end_time,
         )
@@ -284,6 +287,7 @@ def extract_video_clip(inputData: ExtractVideoClipRequest) -> ExtractVideoClipRe
     # Generate response
     response = ExtractVideoClipResponse(
         video_clip_file_path=video_clip_file_path,
+        id=inputData.id,
         start_time=inputData.start_time,
         end_time=inputData.end_time,
     )
@@ -310,6 +314,7 @@ async def upload_video(inputData: UploadVideoRequest) -> UploadVideoResponse:
     # Generate response
     response = UploadVideoResponse(
         content_url_videoclip=result_upload_file,
+        id=inputData.id,
         start_time=inputData.start_time,
         end_time=inputData.end_time,
     )
