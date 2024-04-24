@@ -1,9 +1,11 @@
 import string
 from typing import List
+
 from models.newstagextraction import LlmResponseItem
 
+
 def remove_punctuation(text: str) -> str:
-    return text.translate(str.maketrans("", "",  f"{string.punctuation}¿¡"))
+    return text.translate(str.maketrans("", "", f"{string.punctuation}¿¡"))
 
 
 def cleanse_text(text: str) -> List[str]:
@@ -16,7 +18,9 @@ def cleanse_text(text: str) -> List[str]:
     return word_list
 
 
-def get_cleansed_llm_response_item(list: List[LlmResponseItem], index: int, start: bool) -> List[str]:
+def get_cleansed_llm_response_item(
+    list: List[LlmResponseItem], index: int, start: bool
+) -> List[str]:
     # Get current item
     item = list[index]
 
