@@ -97,41 +97,41 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
         )
     )
 
-    # Extract video clips
-    logging.info("Extract video clips")
+    # Extract video clips and upload video clips
+    logging.info("Extract video clips and upload video clips")
     utils.set_custom_status(
-        context=context, completion_percentage=25.0, status="Extracting Video Clips"
+        context=context,
+        completion_percentage=25.0,
+        status="Extracting Video Clips and Uploading Video Clips",
     )
-    tasks_extract_video_clip = []
+    results_extract_video_clip: List[ExtractVideoClipResponse] = []
+    tasks_upload_video_clips = []
     for video_timestamp in result_load_openai_content.video_timestamps:
+        logging.info(
+            f"Extract video clip: {video_timestamp.start_time}-{video_timestamp.end_time}"
+        )
         input_extract_video_clip: ExtractVideoClipRequest = ExtractVideoClipRequest(
             video_file_path=result_load_video_content.video_file_path,
             start_time=video_timestamp.start_time,
             end_time=video_timestamp.end_time,
             instance_id=context.instance_id,
         )
-        tasks_extract_video_clip.append(
-            context.call_activity_with_retry(
+        result_extract_video_clip: ExtractVideoClipResponse = (
+            yield context.call_activity_with_retry(
                 name="extract_video_clip",
                 retry_options=retry_options,
                 input_=input_extract_video_clip,
             )
         )
-    results_extract_video_clip: List[ExtractVideoClipResponse] = yield context.task_all(
-        tasks_extract_video_clip
-    )
+        results_extract_video_clip.append(result_extract_video_clip)
 
-    # Upload video clip
-    logging.info("Upload video clips")
-    utils.set_custom_status(
-        context=context, completion_percentage=70.0, status="Uploading Video Clips"
-    )
-    tasks_upload_video_clips = []
-    for video_clip in results_extract_video_clip:
+        logging.info(
+            f"Uploading video clip: {video_timestamp.start_time}-{video_timestamp.end_time}"
+        )
         input_upload_video: UploadVideoRequest = UploadVideoRequest(
-            video_file_path=video_clip.video_clip_file_path,
-            start_time=video_clip.start_time,
-            end_time=video_clip.end_time,
+            video_file_path=result_extract_video_clip.video_clip_file_path,
+            start_time=result_extract_video_clip.start_time,
+            end_time=result_extract_video_clip.end_time,
             instance_id=context.instance_id,
         )
         tasks_upload_video_clips.append(
@@ -141,6 +141,11 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
                 input_=input_upload_video,
             )
         )
+    utils.set_custom_status(
+        context=context,
+        completion_percentage=80.0,
+        status="Waiting for Upload of Video Clips to Complete",
+    )
     results_upload_video: List[UploadVideoResponse] = yield context.task_all(
         tasks_upload_video_clips
     )
