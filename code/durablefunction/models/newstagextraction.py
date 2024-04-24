@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from pydantic import BaseModel, Field, HttpUrl, RootModel, field_validator
+from pydantic import AliasChoices, BaseModel, Field, HttpUrl, RootModel, field_validator
 
 
 class NewsTagExtractionOrchestratorRequest(BaseModel):
@@ -115,8 +115,14 @@ class LlmResponseItem(BaseModel):
     title: str = Field(description="title of the subsection")
     tags: List[str] = Field(description="tags of the subsection")
     score: int = Field(description="score of the subsection")
-    start: str = Field(description="start of the text of the subsection")
-    end: str = Field(description="end of the text of the subsection")
+    start: str = Field(
+        description="start of the text of the subsection",
+        validation_alias=AliasChoices("start", "start_sentence"),
+    )
+    end: str = Field(
+        description="end of the text of the subsection",
+        validation_alias=AliasChoices("end", "end_sentence"),
+    )
 
     def get_item_text(self, start: bool = True) -> str:
         if start:
