@@ -10,8 +10,8 @@ from models.newstagextraction import InvokeLlmResponse, LlmResponseItem
 
 class LlmMessages:
     SYSTEM_MESSAGE: str = """
-    You are a world class assistant for identifying news sections. 
-    You split the provided news content into broad thematic sections. The content of each section must cover a common news topic. 
+    You are a world class assistant for identifying news sections.
+    You split the provided news content into broad thematic sections. The content of each section must cover a common news topic.
     Do the following and provide a valid JSON response that uses the schema mentioned below:
     1. Split the provided text into broad thematic sections. Each section must start and end with a full sentence. Ensure that all sentences of the provided text are part of exactly one section.
     2. Identify the start and end of each section and return the first and last sentence of each section.
@@ -88,22 +88,22 @@ class LlmInteractor:
             title="Title of the first section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=9,
-            start="Start of the first section",
-            end="End of the first section.",
+            start="First sentence of the first section",
+            end="Last sentence of the first section.",
         )
         item2 = LlmResponseItem(
             title="Title of the second section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=7,
-            start="Start of the second section",
-            end="End of the second section!",
+            start="First sentence of the second section",
+            end="Last sentence of the second section!",
         )
         item3 = LlmResponseItem(
             title="Title of the third section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=8,
-            start="Start of the third section",
-            end="End of the third section?",
+            start="First sentence of the third section",
+            end="Last sentence of the third section?",
         )
         format_sample = InvokeLlmResponse(root=[item1, item2, item3])
         prompt_partial = prompt.partial(
