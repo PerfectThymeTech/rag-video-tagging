@@ -1,7 +1,8 @@
+import itertools
 import json
 import logging
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import azure.durable_functions as df
 from models.error import ErrorModel
@@ -108,7 +109,7 @@ def newstag_extraction_orchestrator(context: df.DurableOrchestrationContext):
     )
     input_compute_timestamps: ComputeTimestampsRequest = ComputeTimestampsRequest(
         result_video_indexer=result_load_videoindexer_content.transcript,
-        result_llm=result_invoke_llm.root,
+        result_llm=result_invoke_llm.sections,
         instance_id=context.instance_id,
     )
     result_compute_timestamps: ComputeTimestampsResponse = (
@@ -208,7 +209,7 @@ async def invoke_llm(inputData: InvokeLlmRequest) -> InvokeLlmResponse:
     logging.info(f"LLM response: {json.dumps(llm_result)}")
 
     # Generate response
-    response: InvokeLlmResponse = InvokeLlmResponse(root=llm_result)
+    response: InvokeLlmResponse = InvokeLlmResponse.model_validate(llm_result)
 
     # Upload result
     await utils.upload_string(
@@ -225,101 +226,63 @@ async def invoke_llm(inputData: InvokeLlmRequest) -> InvokeLlmResponse:
 async def compute_timestamps(
     inputData: ComputeTimestampsRequest,
 ) -> ComputeTimestampsResponse:
-    # Configure index
-    result_llm_index = 0
-    result_llm_item_start = True
-
-    # Configure current item
-    result_llm_current_words = timestamps.get_cleansed_llm_response_item(
-        list=inputData.result_llm, index=result_llm_index, start=result_llm_item_start
-    )
-
     # Generate response
     response: ComputeTimestampsResponse = ComputeTimestampsResponse(root=[])
-    response_item = ComputeTimestampsItem(
-        title=inputData.result_llm[result_llm_index].title,
-        tags=inputData.result_llm[result_llm_index].tags,
-        score=inputData.result_llm[result_llm_index].score,
-        start_time="",
-        end_time="",
-    )
 
-    # Loop through transcript items
-    for i, item in enumerate(inputData.result_video_indexer):
-        # Split item into words
-        item_words = timestamps.cleanse_text(text=item.text)
+    # Preprocess video indexer result
+    for vi_item in inputData.result_video_indexer:
+        vi_item.text = timestamps.remove_punctuation(vi_item.text)
 
-        # Loop through words
-        for j, item_word in enumerate(item_words):
-            # print(f"Response: {response.model_dump_json()}")
-            # print(f"Item: {response_item.model_dump_json()}")
-            # print(f"LLM Current Words: {result_llm_current_words}")
-            # print(f"item word: {item_word}")
+    # Loop through llm results
+    for llm_item in inputData.result_llm:
+        # Loop through scenes
+        llm_item_start = timestamps.remove_punctuation(llm_item.start)
+        llm_item_end = timestamps.remove_punctuation(llm_item.end)
+        start_time = "None"
+        end_time = "None"
 
-            if item_word == result_llm_current_words[0]:
-                # Create list of next words
-                remaining_words = item_words[j:]
-                num_words_missing = len(result_llm_current_words) - len(remaining_words)
-                start_time = item.instances[0].start
-                end_time = item.instances[0].end
+        # Check start time
+        start_res = [
+            False
+            for val in itertools.takewhile(
+                lambda vi_item: llm_item_start not in vi_item.text,
+                inputData.result_video_indexer,
+            )
+        ]
+        index_start_res = len(start_res)
 
-                if num_words_missing > 0 and (i + 1) < len(
-                    inputData.result_video_indexer
-                ):
-                    next_item = inputData.result_video_indexer[i + 1]
-                    next_item_words = timestamps.cleanse_text(text=next_item.text)
+        # Check end time
+        end_res = [
+            False
+            for val in itertools.takewhile(
+                lambda vi_item: llm_item_end not in vi_item.text,
+                inputData.result_video_indexer[index_start_res:],
+            )
+        ]
+        index_end_res = len(end_res)
 
-                    # Update values for comparison
-                    remaining_words.extend(next_item_words[:num_words_missing])
-                    end_time = next_item.instances[0].end
+        # Update timestamps
+        if index_start_res < len(
+            inputData.result_video_indexer
+        ) and index_start_res + index_end_res < len(inputData.result_video_indexer):
+            start_time = (
+                inputData.result_video_indexer[index_start_res].instances[0].start
+            )
+            end_time = (
+                inputData.result_video_indexer[index_start_res + index_end_res]
+                .instances[0]
+                .end
+            )
 
-                # print(f"Remaining: {remaining_words}")
-                # Compute whether following items are identical
-                identical = [
-                    word_llm == remaining_words[k]
-                    for k, word_llm in enumerate(result_llm_current_words)
-                ]
-                all_identical = all(identical)
-
-                if all_identical:
-                    # Update response & index
-                    if result_llm_item_start:
-                        # Update index
-                        result_llm_item_start = False
-
-                        # Update response
-                        response_item.start_time = start_time
-                    else:
-                        # Update index
-                        result_llm_item_start = True
-                        result_llm_index += 1
-
-                        # Update response
-                        response_item.end_time = end_time
-                        response.root.append(response_item)
-
-                        if result_llm_index >= len(inputData.result_llm):
-                            break
-
-                        response_item = ComputeTimestampsItem(
-                            title=inputData.result_llm[result_llm_index].title,
-                            tags=inputData.result_llm[result_llm_index].tags,
-                            score=inputData.result_llm[result_llm_index].score,
-                            start_time="",
-                            end_time="",
-                        )
-
-                    # Update current item
-                    result_llm_current_words = (
-                        timestamps.get_cleansed_llm_response_item(
-                            list=inputData.result_llm,
-                            index=result_llm_index,
-                            start=result_llm_item_start,
-                        )
-                    )
-
-        if result_llm_index >= len(inputData.result_llm):
-            break
+        # Add item to response
+        response_item = ComputeTimestampsItem(
+            title=llm_item.title,
+            tags=llm_item.tags,
+            score=llm_item.score,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        response.root.append(response_item)
 
     # Upload result
     await utils.upload_string(
