@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import AliasChoices, BaseModel, Field, HttpUrl, RootModel, field_validator
 
 
 class NewsTagExtractionOrchestratorRequest(BaseModel):
@@ -53,7 +53,7 @@ class NewsTagExtractionOrchestratorRequest(BaseModel):
         return u
 
 
-class ExtractTranscriptRequest(BaseModel):
+class LoadVideoindexerContentRequest(BaseModel):
     storage_domain_name: str
     storage_container_name: str = Field(min_length=3, max_length=63)
     storage_blob_name: str
@@ -65,7 +65,7 @@ class ExtractTranscriptRequest(BaseModel):
 
     @staticmethod
     def from_json(data: str):
-        return ExtractTranscriptRequest.model_validate_json(data)
+        return LoadVideoindexerContentRequest.model_validate_json(data)
 
 
 class VideoIndexerTranscriptInstance(BaseModel):
@@ -84,7 +84,7 @@ class VideoIndexerTranscriptItem(BaseModel):
     instances: List[VideoIndexerTranscriptInstance]
 
 
-class VideoIndexerTranscript(BaseModel):
+class LoadVideoindexerContentResponse(BaseModel):
     transcript_text: str
     transcript: List[VideoIndexerTranscriptItem]
 
@@ -94,4 +94,93 @@ class VideoIndexerTranscript(BaseModel):
 
     @staticmethod
     def from_json(data: str):
-        return VideoIndexerTranscript.model_validate_json(data)
+        return LoadVideoindexerContentResponse.model_validate_json(data)
+
+
+class InvokeLlmRequest(BaseModel):
+    content_text: str
+    content_details: str
+    instance_id: str
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return InvokeLlmRequest.model_validate_json(data)
+
+
+class LlmResponseItem(BaseModel):
+    title: str = Field(description="title of the subsection")
+    tags: List[str] = Field(description="tags of the subsection")
+    score: int = Field(description="score of the subsection")
+    start: str = Field(
+        description="start of the text of the subsection",
+        validation_alias=AliasChoices("start", "start_sentence"),
+    )
+    end: str = Field(
+        description="end of the text of the subsection",
+        validation_alias=AliasChoices("end", "end_sentence"),
+    )
+
+    def get_item_text(self, start: bool = True) -> str:
+        if start:
+            return self.start
+        else:
+            return self.end
+
+
+class InvokeLlmResponse(BaseModel):
+    sections: List[LlmResponseItem] = Field(
+        description="list of items describing the subsections",
+        validation_alias=AliasChoices("sections", "news_sections", "root"),
+    )
+
+    def __iter__(self):
+        return iter(self.root)
+
+    def __getitem__(self, item):
+        return self.root[item]
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return InvokeLlmResponse.model_validate_json(data)
+
+
+class ComputeTimestampsRequest(BaseModel):
+    result_video_indexer: List[VideoIndexerTranscriptItem]
+    result_llm: List[LlmResponseItem]
+    instance_id: str
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return ComputeTimestampsRequest.model_validate_json(data)
+
+
+class ComputeTimestampsItem(BaseModel):
+    title: str
+    tags: List[str]
+    score: int
+    start_time: str
+    end_time: str
+
+
+class ComputeTimestampsResponse(RootModel):
+    root: List[ComputeTimestampsItem]
+
+    @staticmethod
+    def to_json(obj) -> str:
+        return obj.model_dump_json()
+
+    @staticmethod
+    def from_json(data: str):
+        return ComputeTimestampsResponse.model_validate_json(data)

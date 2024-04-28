@@ -141,6 +141,44 @@ async def load_blob(
     return data
 
 
+async def upload_string(
+    data: str,
+    storage_domain_name: str,
+    storage_container_name: str,
+    storage_blob_name: str,
+) -> str:
+    """Upload file to blob storage async from local storage.
+
+    file_path (str): The file path to which the file will be downloaded.
+    storage_domain_name (str): The domain name of the storage account.
+    storage_container_name (str): The container name of the storage account.
+    storage_blob_name (str): The blob name of the storage account.
+    RETURNS (str): The url of the uploaded blob.
+    """
+    logging.info(f"Start uploading string to blob storage.")
+
+    # Create credentials
+    credential = DefaultAzureCredential()
+
+    # Create client
+    blob_service_client = BlobServiceClient(
+        f"https://{storage_domain_name}", credential=credential
+    )
+    container_client = blob_service_client.get_container_client(
+        container=storage_container_name
+    )
+
+    # Upload blob
+    blob_client = await container_client.upload_blob(
+        name=storage_blob_name, data=data, overwrite=True
+    )
+
+    logging.info(f"Finished uploading string to blob storage.")
+
+    # Return blob url
+    return blob_client.url
+
+
 def delete_directory(directory_path: str) -> bool:
     """Remove local directory recursively.
 
