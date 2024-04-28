@@ -131,9 +131,10 @@ class LlmResponseItem(BaseModel):
             return self.end
 
 
-class InvokeLlmResponse(RootModel):
-    root: List[LlmResponseItem] = Field(
-        description="list of items describing the subsections"
+class InvokeLlmResponse(BaseModel):
+    sections: List[LlmResponseItem] = Field(
+        description="list of items describing the subsections",
+        validation_alias=AliasChoices("sections", "news_sections", "root"),
     )
 
     def __iter__(self):
