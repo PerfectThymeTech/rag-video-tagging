@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     AZURE_OPEN_AI_BASE_URL: str = "https://durable-aoai001.openai.azure.com/"
     AZURE_OPEN_AI_API_VERSION: str = "2024-02-15-preview"
     AZURE_OPEN_AI_DEPLOYMENT_NAME: str = "gpt-4"
+    AZURE_OPEN_AI_TEMPERATURE: float = 0.0
 
 
 settings = Settings()
