@@ -201,6 +201,7 @@ async def invoke_llm(inputData: InvokeLlmRequest) -> InvokeLlmResponse:
         azure_open_ai_base_url=settings.AZURE_OPEN_AI_BASE_URL,
         azure_open_ai_api_version=settings.AZURE_OPEN_AI_API_VERSION,
         azure_open_ai_deployment_name=settings.AZURE_OPEN_AI_DEPLOYMENT_NAME,
+        azure_open_ai_temperature=settings.AZURE_OPEN_AI_TEMPERATURE,
     )
     llm_result: Dict[Any] = llm_ineractor.invoke_llm_chain(
         news_content=inputData.content_text,
