@@ -4,6 +4,7 @@ import logging
 import azure.durable_functions as df
 import azure.functions as func
 from models.error import ErrorModel
+from models.health import HeartbeatResponse
 from models.startworkflow import StartWorkflowRequest
 from newstagextraction.orchestration import bp as bp_newstagextraction
 from pydantic import ValidationError
@@ -40,3 +41,13 @@ async def http_start(req: func.HttpRequest, client: df.DurableOrchestrationClien
             status_code=422,
         )
     return response
+
+
+@app.function_name("Health")
+@app.route(route="heartbeat")
+@app.http_type(http_type=func.HttpMethod.GET)
+async def heartbeat(req: func.HttpRequest) -> func.HttpResponse:
+    response = HeartbeatResponse(is_alive=True).model_dump_json()
+    return func.HttpResponse(
+        body=response, status_code=200, mimetype="application/json"
+    )
