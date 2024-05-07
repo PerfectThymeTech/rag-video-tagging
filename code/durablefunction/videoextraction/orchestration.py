@@ -168,6 +168,8 @@ def video_extraction_orchestrator(context: df.DurableOrchestrationContext):
     utils.set_custom_status(
         context=context, completion_percentage=100.0, status="Completed"
     )
+    if not results_upload_video:
+        results_upload_video = []
     result = VideoExtractionOrchestratorResponse(
         error_code=0, extracted_video_clips=results_upload_video
     )
