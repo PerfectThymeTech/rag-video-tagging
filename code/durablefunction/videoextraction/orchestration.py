@@ -274,6 +274,18 @@ def extract_video_clip(inputData: ExtractVideoClipRequest) -> ExtractVideoClipRe
     )
     if not os.path.exists(video_clip_folder_path):
         os.makedirs(video_clip_folder_path)
+    
+    # Create codec map
+    codecs = {
+        "mp4": "libx264",
+        "avi": "png",
+        "ogv": "libvorbis",
+        "webm": "libvpx",
+    }
+    codec = codecs.get(video_clip_file_type)
+    if not codec:
+        video_clip_file_type = "mp4"
+        codec = codecs.get(video_clip_file_type)
 
     # Save video clip
     video_clip_file_type = str.split(inputData.video_file_path, ".")[-1]
@@ -281,7 +293,7 @@ def extract_video_clip(inputData: ExtractVideoClipRequest) -> ExtractVideoClipRe
     video_clip_file_path = os.path.join(video_clip_folder_path, video_clip_file_name)
     current_working_path = os.getcwd()
     os.chdir(video_clip_folder_path)
-    video_clip.write_videofile(video_clip_file_name)
+    video_clip.write_videofile(video_clip_file_name, codec=)
     os.chdir(current_working_path)
 
     # Generate response
