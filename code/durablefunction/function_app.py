@@ -10,7 +10,7 @@ from newstagextraction.orchestration import bp as bp_newstagextraction
 from pydantic import ValidationError
 from videoextraction.orchestration import bp as bp_videoextraction
 
-app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = df.DFApp(http_auth_level=func.AuthLevel.FUNCTION)
 app.register_functions(bp_videoextraction)
 app.register_functions(bp_newstagextraction)
 

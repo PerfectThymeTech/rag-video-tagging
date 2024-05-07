@@ -251,21 +251,24 @@ async def load_video_content(
 def extract_video_clip(inputData: ExtractVideoClipRequest) -> ExtractVideoClipResponse:
     logging.info(f"Starting video clip extraction activity")
 
+    # Load video file clip
+    video = VideoFileClip(inputData.video_file_path)
+    video_clip_duration_in_secs = int(video.duration)
+
     # Calculate start and end in secs
     start_in_secs: float = (
         datetime.combine(datetime.min, inputData.start_time) - datetime.min
     ).total_seconds()
-    start_in_secs: int = int(start_in_secs)
+    start_in_secs: int = min(int(start_in_secs), video_clip_duration_in_secs)
     end_in_secs: float = (
         datetime.combine(datetime.min, inputData.end_time) - datetime.min
     ).total_seconds()
-    end_in_secs: int = int(end_in_secs + 1)
+    end_in_secs: int = min(int(end_in_secs + 1), video_clip_duration_in_secs)
     logging.info(
         f"Extracting video clip from {start_in_secs}s to {end_in_secs}s from {inputData.video_file_path}."
     )
 
     # Extract video clip
-    video = VideoFileClip(inputData.video_file_path)
     video_clip = video.subclip(start_in_secs, end_in_secs)
 
     # Create folder
@@ -275,13 +278,25 @@ def extract_video_clip(inputData: ExtractVideoClipRequest) -> ExtractVideoClipRe
     if not os.path.exists(video_clip_folder_path):
         os.makedirs(video_clip_folder_path)
 
-    # Save video clip
+    # Create codec map
     video_clip_file_type = str.split(inputData.video_file_path, ".")[-1]
+    codecs = {
+        "mp4": "libx264",
+        "avi": "png",
+        "ogv": "libvorbis",
+        "webm": "libvpx",
+    }
+    codec = codecs.get(video_clip_file_type)
+    if not codec:
+        video_clip_file_type = "mp4"
+        codec = codecs.get(video_clip_file_type)
+
+    # Save video clip
     video_clip_file_name = f"video_{start_in_secs}_{end_in_secs}.{video_clip_file_type}"
     video_clip_file_path = os.path.join(video_clip_folder_path, video_clip_file_name)
     current_working_path = os.getcwd()
     os.chdir(video_clip_folder_path)
-    video_clip.write_videofile(video_clip_file_name)
+    video_clip.write_videofile(video_clip_file_name, codec=codec)
     os.chdir(current_working_path)
 
     # Generate response
