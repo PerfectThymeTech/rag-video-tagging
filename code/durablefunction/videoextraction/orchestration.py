@@ -274,7 +274,7 @@ def extract_video_clip(inputData: ExtractVideoClipRequest) -> ExtractVideoClipRe
     )
     if not os.path.exists(video_clip_folder_path):
         os.makedirs(video_clip_folder_path)
-    
+
     # Create codec map
     codecs = {
         "mp4": "libx264",
