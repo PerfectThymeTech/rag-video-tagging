@@ -21,6 +21,12 @@ on:
       - ".github/workflows/_functionAppDeployTemplate.yml"
 
 jobs:
+  hello:
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo "Hello World"
+
   # function_test:
   #   uses: ./.github/workflows/_functionAppTestTemplate.yml
   #   name: "Function App Test"
@@ -42,18 +48,18 @@ jobs:
   #     USER_NAME: ${{ github.actor }}
   #     PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
-  function_deploy:
-    uses: ./.github/workflows/_functionAppDeployTemplate.yml
-    name: "Function App Deploy"
-    # needs: [function_test]
-    if: github.event_name == 'push' || github.event_name == 'release'
-    with:
-      environment: "dev"
-      python_version: "3.11"
-      function_directory: "./code/durablefunction"
-      function_name: "myfunctiontst"
-      tenant_id: "572cf1ec-3f90-49a2-896f-ab2fa36ca0d3"
-      subscription_id: "be25820a-df86-4794-9e95-6a45cd5c0941"
-    secrets:
-      CLIENT_ID: ${{ secrets.CLIENT_ID }}
-      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+  # function_deploy:
+  #   uses: ./.github/workflows/_functionAppDeployTemplate.yml
+  #   name: "Function App Deploy"
+  #   # needs: [function_test]
+  #   if: github.event_name == 'push' || github.event_name == 'release'
+  #   with:
+  #     environment: "dev"
+  #     python_version: "3.11"
+  #     function_directory: "./code/durablefunction"
+  #     function_name: "myfunctiontst"
+  #     tenant_id: "572cf1ec-3f90-49a2-896f-ab2fa36ca0d3"
+  #     subscription_id: "be25820a-df86-4794-9e95-6a45cd5c0941"
+  #   secrets:
+  #     CLIENT_ID: ${{ secrets.CLIENT_ID }}
+  #     CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
