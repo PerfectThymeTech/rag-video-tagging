@@ -293,7 +293,7 @@ def extract_video_clip(inputData: ExtractVideoClipRequest) -> ExtractVideoClipRe
     video_clip_file_path = os.path.join(video_clip_folder_path, video_clip_file_name)
     current_working_path = os.getcwd()
     os.chdir(video_clip_folder_path)
-    video_clip.write_videofile(video_clip_file_name, codec=)
+    video_clip.write_videofile(video_clip_file_name, codec=codec)
     os.chdir(current_working_path)
 
     # Generate response
