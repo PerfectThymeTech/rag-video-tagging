@@ -296,10 +296,9 @@ def extract_video_clip(inputData: ExtractVideoClipRequest) -> ExtractVideoClipRe
     # Save video clip
     video_clip_file_name = f"video_{start_in_secs}_{end_in_secs}.{video_clip_file_type}"
     video_clip_file_path = os.path.join(video_clip_folder_path, video_clip_file_name)
-    current_working_path = os.getcwd()
     os.chdir(video_clip_folder_path)
     video_clip.write_videofile(video_clip_file_name, codec=codec)
-    os.chdir(current_working_path)
+    os.chdir(settings.HOME_DIRECTORY)
 
     # Generate response
     response = ExtractVideoClipResponse(
