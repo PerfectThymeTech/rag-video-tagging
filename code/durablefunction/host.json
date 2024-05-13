@@ -29,8 +29,8 @@
       "hubName": "%TaskHubName%",
       "extendedSessionsEnabled": false,
       "extendedSessionIdleTimeoutInSeconds": 30,
-      "maxConcurrentActivityFunctions": 4,
-      "maxConcurrentOrchestratorFunctions": 4,
+      "maxConcurrentActivityFunctions": 1,
+      "maxConcurrentOrchestratorFunctions": 2,
       "storageProvider": {
         "partitionCount": 4,
         "useLegacyPartitionManagement": false,
