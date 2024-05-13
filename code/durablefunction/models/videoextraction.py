@@ -148,7 +148,7 @@ class ContentOpenAiScene(BaseModel):
     start_time: time
     end_time: time
     transcript: str
-    translation: str
+    translation: str | None = None
 
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
