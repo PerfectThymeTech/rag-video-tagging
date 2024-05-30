@@ -187,7 +187,7 @@ async def load_videoindexer_content(
         data=response.model_dump_json(),
         storage_domain_name=settings.STORAGE_DOMAIN_NAME,
         storage_container_name=settings.STORAGE_CONTAINER_NAME,
-        storage_blob_name=os.path.join(inputData.instance_id, "transcript.json"),
+        storage_blob_name=os.path.join(settings.NEWSTAGEXTRACTION_ROOT_FOLDER_NAME, inputData.instance_id, "transcript.json"),
     )
 
     return response
@@ -217,7 +217,7 @@ async def invoke_llm(inputData: InvokeLlmRequest) -> InvokeLlmResponse:
         data=response.model_dump_json(),
         storage_domain_name=settings.STORAGE_DOMAIN_NAME,
         storage_container_name=settings.STORAGE_CONTAINER_NAME,
-        storage_blob_name=os.path.join(inputData.instance_id, "llm.json"),
+        storage_blob_name=os.path.join(settings.NEWSTAGEXTRACTION_ROOT_FOLDER_NAME, inputData.instance_id, "llm.json"),
     )
 
     return response
@@ -290,6 +290,6 @@ async def compute_timestamps(
         data=response.model_dump_json(),
         storage_domain_name=settings.STORAGE_DOMAIN_NAME,
         storage_container_name=settings.STORAGE_CONTAINER_NAME,
-        storage_blob_name=os.path.join(inputData.instance_id, "timestamps.json"),
+        storage_blob_name=os.path.join(settings.NEWSTAGEXTRACTION_ROOT_FOLDER_NAME, inputData.instance_id, "timestamps.json"),
     )
     return response

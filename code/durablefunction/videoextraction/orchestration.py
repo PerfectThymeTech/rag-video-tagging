@@ -311,7 +311,7 @@ async def upload_video(inputData: UploadVideoRequest) -> UploadVideoResponse:
 
     # Define file name of blob
     storage_blob_name = os.path.join(
-        inputData.instance_id, os.path.basename(inputData.video_file_path)
+        settings.VIDEOEXTRACTION_ROOT_FOLDER_NAME, inputData.instance_id, os.path.basename(inputData.video_file_path)
     )
 
     # Upload file
