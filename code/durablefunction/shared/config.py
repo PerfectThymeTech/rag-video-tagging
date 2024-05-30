@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     AZURE_OPEN_AI_DEPLOYMENT_NAME: str = "gpt-4"
     AZURE_OPEN_AI_TEMPERATURE: float = 0.0
 
+    VIDEOEXTRACTION_ROOT_FOLDER_NAME: str = "videoextraction"
+
+    NEWSTAGEXTRACTION_ROOT_FOLDER_NAME: str = "newstagextraction"
     NEWSTAGEXTRACTION_SYSTEM_PROMPT: str = """
     You are a world class assistant for identifying news sections.
     Do the following with the provided news content and provide a valid JSON response that uses the schema mentioned below:
