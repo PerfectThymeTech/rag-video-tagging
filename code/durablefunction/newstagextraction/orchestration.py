@@ -283,15 +283,17 @@ async def compute_timestamps(
                 .end
             )
 
-        # Add item to response
-        response_item = ComputeTimestampsItem(
-            title=llm_item.title,
-            tags=llm_item.tags,
-            score=llm_item.score,
-            start_time=start_time,
-            end_time=end_time,
-        )
-        response.root.append(response_item)
+            # Add item to response
+            response_item = ComputeTimestampsItem(
+                title=llm_item.title,
+                tags=llm_item.tags,
+                score=llm_item.score,
+                start_time=start_time,
+                end_time=end_time,
+            )
+            response.root.append(response_item)
+        else:
+            logging.info("Timestamp could ot be extracted. Either the end time is before the start time, or the model did not provide exact references in the transcript.")
 
     # Upload result
     await utils.upload_string(
