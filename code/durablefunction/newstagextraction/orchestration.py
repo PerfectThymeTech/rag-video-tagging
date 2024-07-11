@@ -108,7 +108,7 @@ def newstag_extraction_orchestrator(context: df.DurableOrchestrationContext):
         status="Compute timestamps",
     )
     input_compute_timestamps: ComputeTimestampsRequest = ComputeTimestampsRequest(
-        result_video_indexer=result_load_videoindexer_content.transcript,
+        result_video_indexer=result_load_videoindexer_content,
         result_llm=result_invoke_llm.sections,
         instance_id=context.instance_id,
     )
@@ -166,9 +166,19 @@ async def load_videoindexer_content(
         transcript = []
 
     # Filter items in transcript
+    index_start = 0
     for item in transcript:
         if item.get("speakerId", None):
+            # Get text
             text = item.get("text")
+
+            # Define index strat and end for characters
+            item["index_start"] = index_start
+            item["index_end"] = (
+                index_start + len(text) + 1
+            )  # increase index by one as the items get joined with space in between.
+            index_start = item["index_end"]
+
             transcript_text_list.append(text)
             transcript_list.append(item)
 
@@ -238,53 +248,54 @@ async def compute_timestamps(
     # Generate response
     response: ComputeTimestampsResponse = ComputeTimestampsResponse(root=[])
 
-    # Preprocess video indexer result
-    for vi_item in inputData.result_video_indexer:
-        vi_item.text = timestamps.remove_punctuation(vi_item.text)
+    # Text normalized
+    transcript_text_normalized = timestamps.get_normalized_text(
+        text=inputData.result_video_indexer.transcript_text
+    )
+    idx_current = 0
 
     # Loop through llm results
     for llm_item in inputData.result_llm:
-        # Loop through scenes
-        llm_item_start = timestamps.remove_punctuation(llm_item.start)
-        llm_item_end = timestamps.remove_punctuation(llm_item.end)
-        start_time = "None"
-        end_time = "None"
+        # Define defaults
+        start_time = None
+        end_time = None
 
-        # Check start time
-        start_res = [
-            False
-            for val in itertools.takewhile(
-                lambda vi_item: llm_item_start not in vi_item.text,
-                inputData.result_video_indexer,
-            )
-        ]
-        index_start_res = len(start_res)
+        # Text normalized
+        start_normalized = timestamps.get_normalized_text(text=llm_item.start)
+        end_normalized = timestamps.get_normalized_text(text=llm_item.end)
+        
+        # Identify index of text
+        index_start = transcript_text_normalized.find(start_normalized, idx_current)
+        index_end = transcript_text_normalized.find(
+            end_normalized, max(index_start, idx_current) + len(llm_item.start)
+        )
+        index_end_adj = index_end + len(llm_item.end)
 
-        # Check end time
-        end_res = [
-            False
-            for val in itertools.takewhile(
-                lambda vi_item: llm_item_end not in vi_item.text,
-                inputData.result_video_indexer[index_start_res:],
-            )
-        ]
-        index_end_res = len(end_res)
+        # Update index current
+        idx_current = max(idx_current, index_start, index_end) + len(llm_item.end)
 
-        # Update timestamps
-        if index_start_res < len(
-            inputData.result_video_indexer
-        ) and index_start_res + index_end_res < len(inputData.result_video_indexer):
-            start_time = (
-                inputData.result_video_indexer[index_start_res].instances[0].start
-            )
-            end_time = (
-                inputData.result_video_indexer[index_start_res + index_end_res]
-                .instances[0]
-                .end
-            )
+        # Loop through video indexer transcript items
+        if index_start >= 0 and index_end >= 0:
+            for vi_item in inputData.result_video_indexer.transcript:
+                if (
+                    vi_item.index_start <= index_start
+                    and index_start < vi_item.index_end
+                ):
+                    start_time = vi_item.instances[0].start
 
+                if (
+                    vi_item.index_start <= index_end_adj
+                    and index_end_adj < vi_item.index_end
+                ):
+                    end_time = vi_item.instances[0].end
+
+                if start_time and end_time:
+                    break
+
+        if start_time and end_time:
             # Add item to response
             response_item = ComputeTimestampsItem(
+                id=llm_item.id,
                 title=llm_item.title,
                 tags=llm_item.tags,
                 score=llm_item.score,
@@ -293,7 +304,9 @@ async def compute_timestamps(
             )
             response.root.append(response_item)
         else:
-            logging.info("Timestamp could ot be extracted. Either the end time is before the start time, or the model did not provide exact references in the transcript.")
+            logging.info(
+                f"Timestamp could not be extracted for item with id '{llm_item.id}'. Either the end time is before the start time, or the model did not provide exact references in the transcript."
+            )
 
     # Upload result
     await utils.upload_string(
