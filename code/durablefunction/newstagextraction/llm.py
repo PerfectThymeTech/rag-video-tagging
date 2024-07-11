@@ -76,6 +76,7 @@ class LlmInteractor:
 
         # Insert partial into prompt
         item1 = LlmResponseItem(
+            id=1,
             title="Title of the first section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=9,
@@ -83,6 +84,7 @@ class LlmInteractor:
             end="Last sentence of the first section",
         )
         item2 = LlmResponseItem(
+            id=2,
             title="Title of the second section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=7,
@@ -90,6 +92,7 @@ class LlmInteractor:
             end="Last sentence of the second section",
         )
         item3 = LlmResponseItem(
+            id=3,
             title="Title of the third section",
             tags=["tag-1", "tag-2", "tag-3"],
             score=8,

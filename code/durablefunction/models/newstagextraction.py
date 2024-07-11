@@ -82,6 +82,8 @@ class VideoIndexerTranscriptItem(BaseModel):
     speaker_id: int = Field(default=None, alias="speakerId")
     language: str
     instances: List[VideoIndexerTranscriptInstance]
+    index_start: int
+    index_end: int
 
 
 class LoadVideoindexerContentResponse(BaseModel):
@@ -112,6 +114,7 @@ class InvokeLlmRequest(BaseModel):
 
 
 class LlmResponseItem(BaseModel):
+    id: int = Field(description="id of the subsection")
     title: str = Field(description="title of the subsection")
     tags: List[str] = Field(description="tags of the subsection")
     score: int = Field(description="score of the subsection")
@@ -153,7 +156,7 @@ class InvokeLlmResponse(BaseModel):
 
 
 class ComputeTimestampsRequest(BaseModel):
-    result_video_indexer: List[VideoIndexerTranscriptItem]
+    result_video_indexer: LoadVideoindexerContentResponse
     result_llm: List[LlmResponseItem]
     instance_id: str
 
@@ -167,6 +170,7 @@ class ComputeTimestampsRequest(BaseModel):
 
 
 class ComputeTimestampsItem(BaseModel):
+    id: int
     title: str
     tags: List[str]
     score: int
