@@ -48,6 +48,7 @@ class LlmInteractor:
         prompt.input_variables = [
             "format_sample",
             "news_content",
+            "language",
             "news_show_details",
         ]
 
@@ -113,8 +114,13 @@ class LlmInteractor:
         self,
         news_content: str,
         news_show_details: str,
+        language: str,
     ) -> InvokeLlmResponse:
         result: InvokeLlmResponse = self.__llm_chain.invoke(
-            {"news_content": news_content, "news_show_details": news_show_details}
+            {
+                "news_content": news_content,
+                "news_show_details": news_show_details,
+                "language": language,
+            },
         )
         return result

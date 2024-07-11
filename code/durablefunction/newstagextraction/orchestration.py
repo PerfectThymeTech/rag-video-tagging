@@ -92,6 +92,7 @@ def newstag_extraction_orchestrator(context: df.DurableOrchestrationContext):
     input_invoke_llm: InvokeLlmRequest = InvokeLlmRequest(
         content_text=result_load_videoindexer_content.transcript_text,
         content_details="This is a tv news show.",
+        content_language=result_load_videoindexer_content.language,
         instance_id=context.instance_id,
     )
     result_invoke_llm: InvokeLlmResponse = yield context.call_activity_with_retry(
@@ -147,23 +148,25 @@ async def load_videoindexer_content(
     data_json = json.loads(data)
     logging.info(f"Loaded json data from storage: {data_json}")
 
-    # TODO: Handle errors
-
-    # Generate Transcript fom JSON
-    transcript_text_list = []
-    transcript_list = []
+    # Pop video from list
     try:
-        transcript = (
-            data_json.get("videos", [{"insights": {"transcript": []}}])
-            .pop(0)
-            .get("insights", {"transcript": []})
-            .get("transcript", [])
+        video = data_json.get("videos", [{"insights": {"transcript": []}}]).pop(0)
+        transcript = video.get("insights", {"transcript": []}).get("transcript", [])
+        language = video.get("insights", {"sourceLanguage": "Unknown"}).get(
+            "sourceLanguage", "Unknown"
         )
     except IndexError as e:
         logging.error(
             f"Index error when loading the video indexer data, so setting empty transcript: '{e}'"
         )
         transcript = []
+        language = "Unknown"
+
+    # TODO: Handle errors
+
+    # Generate Transcript fom JSON
+    transcript_text_list = []
+    transcript_list = []
 
     # Filter items in transcript
     index_start = 0
@@ -189,7 +192,7 @@ async def load_videoindexer_content(
     logging.info(f"Loaded transcript text: {transcript_text}")
     logging.info(f"Loaded transcript items: {len(transcript_list)}")
     response: LoadVideoindexerContentResponse = LoadVideoindexerContentResponse(
-        transcript_text=transcript_text, transcript=transcript_list
+        language=language, transcript_text=transcript_text, transcript=transcript_list
     )
 
     # Upload result
@@ -220,6 +223,7 @@ async def invoke_llm(inputData: InvokeLlmRequest) -> InvokeLlmResponse:
     llm_result: Dict[Any] = llm_ineractor.invoke_llm_chain(
         news_content=inputData.content_text,
         news_show_details=inputData.content_details,
+        language=inputData.content_language,
     )
     logging.info(f"LLM response: {json.dumps(llm_result)}")
 
