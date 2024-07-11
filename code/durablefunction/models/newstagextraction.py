@@ -87,6 +87,7 @@ class VideoIndexerTranscriptItem(BaseModel):
 
 
 class LoadVideoindexerContentResponse(BaseModel):
+    language: str
     transcript_text: str
     transcript: List[VideoIndexerTranscriptItem]
 
@@ -102,6 +103,7 @@ class LoadVideoindexerContentResponse(BaseModel):
 class InvokeLlmRequest(BaseModel):
     content_text: str
     content_details: str
+    content_language: str
     instance_id: str
 
     @staticmethod
