@@ -1,3 +1,4 @@
+import re
 import string
 from typing import List
 
@@ -34,3 +35,15 @@ def get_cleansed_llm_response_item(
     word_list = text_cleansed.split(" ")
 
     return word_list
+
+
+def replace_punctuation(text: str, replace: str) -> str:
+    return re.sub(f"[{string.punctuation}¿¡]", replace, text)
+
+
+def get_normalized_text(text: str) -> str:
+    # Replace punctuation with dot
+    text_normalized_punctuation = replace_punctuation(text, replace=".")
+
+    # Lower text
+    return text_normalized_punctuation.lower()
