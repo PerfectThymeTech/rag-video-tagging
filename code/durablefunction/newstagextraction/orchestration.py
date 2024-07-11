@@ -263,7 +263,7 @@ async def compute_timestamps(
         # Text normalized
         start_normalized = timestamps.get_normalized_text(text=llm_item.start)
         end_normalized = timestamps.get_normalized_text(text=llm_item.end)
-        
+
         # Identify index of text
         index_start = transcript_text_normalized.find(start_normalized, idx_current)
         index_end = transcript_text_normalized.find(
