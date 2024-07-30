@@ -276,7 +276,8 @@ async def compute_timestamps(
         index_end_adj = index_end + len(llm_item.end)
 
         # Update index current
-        idx_current = max(idx_current, index_start, index_end) + len(llm_item.end)
+        # idx_current = max(idx_current, index_start, index_end) + len(llm_item.end) # Use only when detected scenes are mutually exclusive which is not always the case
+        idx_current = 0
 
         # Loop through video indexer transcript items
         if index_start >= 0 and index_end >= 0:
