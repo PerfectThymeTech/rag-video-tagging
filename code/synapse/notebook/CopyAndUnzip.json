@@ -4,20 +4,20 @@
 		"nbformat": 4,
 		"nbformat_minor": 2,
 		"bigDataPool": {
-			"referenceName": "test",
+			"referenceName": "spark34",
 			"type": "BigDataPoolReference"
 		},
 		"sessionProperties": {
-			"driverMemory": "56g",
-			"driverCores": 8,
-			"executorMemory": "56g",
-			"executorCores": 8,
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
 			"numExecutors": 2,
 			"conf": {
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "f5088eed-b3d2-41a1-a787-4d3b92faee70"
+				"spark.autotune.trackingId": "99e2c290-4a59-4450-b7d0-d4a54f7ad12a"
 			}
 		},
 		"metadata": {
@@ -31,18 +31,18 @@
 				"name": "python"
 			},
 			"a365ComputeOptions": {
-				"id": "/subscriptions/8f171ff9-2b5b-4f0f-aed5-7fa360a1d094/resourceGroups/test-purview/providers/Microsoft.Synapse/workspaces/tstsynapse4/bigDataPools/test",
-				"name": "test",
+				"id": "/subscriptions/8f171ff9-2b5b-4f0f-aed5-7fa360a1d094/resourceGroups/test-purview/providers/Microsoft.Synapse/workspaces/tstsynapse4/bigDataPools/spark34",
+				"name": "spark34",
 				"type": "Spark",
-				"endpoint": "https://tstsynapse4.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test",
+				"endpoint": "https://tstsynapse4.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/spark34",
 				"auth": {
 					"type": "AAD",
 					"authResource": "https://dev.azuresynapse.net"
 				},
-				"sparkVersion": "3.3",
+				"sparkVersion": "3.4",
 				"nodeCount": 10,
-				"cores": 8,
-				"memory": 56,
+				"cores": 4,
+				"memory": 28,
 				"automaticScaleJobs": false
 			},
 			"sessionKeepAliveTimeout": 30
@@ -73,7 +73,7 @@
 					"sink_linked_service_name = \"DataLakeRaw\"\n",
 					""
 				],
-				"execution_count": 23
+				"execution_count": 35
 			},
 			{
 				"cell_type": "markdown",
@@ -112,7 +112,7 @@
 					"\n",
 					"logging.info(f\"Pipeline ID: '{pipeline_id}'\")"
 				],
-				"execution_count": 24
+				"execution_count": 36
 			},
 			{
 				"cell_type": "code",
@@ -130,7 +130,7 @@
 				"source": [
 					"print(f\"Pipeline ID: '{pipeline_id}'\")"
 				],
-				"execution_count": 25
+				"execution_count": 37
 			},
 			{
 				"cell_type": "markdown",
@@ -169,7 +169,7 @@
 					"sink_adls_path = f\"abfss://{sink_container_name}@{sink_account_name}.dfs.core.windows.net/{sink_directory_name_adls}/{sink_file_name_adls}\"\n",
 					""
 				],
-				"execution_count": 26
+				"execution_count": 38
 			},
 			{
 				"cell_type": "code",
@@ -192,7 +192,7 @@
 					")\n",
 					""
 				],
-				"execution_count": 29
+				"execution_count": 39
 			},
 			{
 				"cell_type": "code",
@@ -215,7 +215,7 @@
 					"    )\n",
 					""
 				],
-				"execution_count": null
+				"execution_count": 40
 			},
 			{
 				"cell_type": "markdown",
@@ -268,7 +268,7 @@
 					"    mssparkutils.fs.unmount(f\"/{mount_path}\")\n",
 					""
 				],
-				"execution_count": null
+				"execution_count": 41
 			},
 			{
 				"cell_type": "code",
@@ -294,7 +294,7 @@
 					")\n",
 					""
 				],
-				"execution_count": null
+				"execution_count": 42
 			},
 			{
 				"cell_type": "code",
@@ -312,9 +312,63 @@
 				"source": [
 					"import subprocess\n",
 					"\n",
-					"subprocess.run([\"unzip\", ])"
+					"archive_file_path = f\"{sink_mount_path_cluster}/{sink_directory_name_adls}/{sink_file_name_adls}\"\n",
+					"unzip_sink_path = f\"{sink_mount_path_cluster}/{sink_directory_name_adls}/\"\n",
+					"\n",
+					"res = subprocess.run([\"unzip\", archive_file_path, \"-d\", unzip_sink_path])\n",
+					"\n",
+					"try:\n",
+					"    res.check_returncode()\n",
+					"except subprocess.CalledProcessError as e:\n",
+					"    logging.error(f\"Failed to unzip archive in sink '{e}'.\")\n",
+					""
 				],
-				"execution_count": null
+				"execution_count": 43
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"if delete_source_file:\n",
+					"    mssparkutils.fs.rm(\n",
+					"        dir=sink_adls_path,\n",
+					"        recurse=False\n",
+					"    )\n",
+					""
+				],
+				"execution_count": 44
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Unmount sink storage\n",
+					"unmount_datalake_gen2(\n",
+					"    mount_path=sink_mount_path,\n",
+					")\n",
+					""
+				],
+				"execution_count": 45
 			},
 			{
 				"cell_type": "markdown",
@@ -347,7 +401,7 @@
 					"    \"sink_adls_path\": sink_adls_path,\n",
 					"    \"sink_account_name\": sink_account_name,\n",
 					"    \"sink_container_name\": sink_container_name,\n",
-					"    \"sink_directory_name\": f\"{sink_directory_name}/{sink_file_name}\"\n",
+					"    \"sink_directory_name\": f\"{sink_directory_name_adls}/\"\n",
 					"}\n",
 					"\n",
 					"if exit_notebook_with_outputs:\n",
@@ -356,7 +410,7 @@
 					"    )\n",
 					""
 				],
-				"execution_count": null
+				"execution_count": 47
 			}
 		]
 	}
